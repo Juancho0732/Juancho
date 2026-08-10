@@ -1,0 +1,76 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: -apple-system, 'SF Pro Text', system-ui, 'Segoe UI', Roboto, sans-serif;
+
+  --color-canvas: #f7f7f8;
+  --color-surface: #ffffff;
+  --color-surface-muted: #fafafa;
+  --color-border: #e4e4e7;
+  --color-border-strong: #d4d4d8;
+  --color-ink: #18181b;
+  --color-ink-muted: #52525b;
+  --color-ink-faint: #a1a1aa;
+
+  --color-brand: #2f5fed;
+  --color-brand-ink: #1e3fb0;
+  --color-brand-soft: #eaf0ff;
+
+  --color-good: #1a8f5e;
+  --color-good-soft: #e5f5ee;
+  --color-warning: #b4740c;
+  --color-warning-soft: #fbf1de;
+  --color-bad: #c23b3b;
+  --color-bad-soft: #fbeaea;
+  --color-neutral: #71717a;
+  --color-neutral-soft: #f1f1f2;
+}
+
+@media (prefers-color-scheme: dark) {
+  @theme {
+    --color-canvas: #101014;
+    --color-surface: #18181c;
+    --color-surface-muted: #1d1d22;
+    --color-border: #2a2a30;
+    --color-border-strong: #38383f;
+    --color-ink: #f2f2f4;
+    --color-ink-muted: #a7a7b0;
+    --color-ink-faint: #6b6b74;
+
+    --color-brand: #6d8dff;
+    --color-brand-ink: #a9bbff;
+    --color-brand-soft: #1b2545;
+
+    --color-good: #3ecb8f;
+    --color-good-soft: #12291f;
+    --color-warning: #e3a83b;
+    --color-warning-soft: #2c2312;
+    --color-bad: #ec6a6a;
+    --color-bad-soft: #2c1616;
+    --color-neutral: #9a9aa2;
+    --color-neutral-soft: #232328;
+  }
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Evita el "pull to refresh"/bounce y el resaltado de toque, para que la app
+     se sienta nativa en iPad al instalarse como PWA. */
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+* {
+  box-sizing: border-box;
+}
