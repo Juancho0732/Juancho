@@ -8,6 +8,23 @@ un simulador de escenarios, diagnóstico automático y un Health Score.
 Todos los datos se guardan **solo en el dispositivo** (IndexedDB del
 navegador) — no hay backend ni se envía información a servicios externos.
 
+## Instalarla en un iPad (o iPhone)
+
+La app se despliega automáticamente a GitHub Pages en cada push a `main` o a
+`claude/marketing-metrics-app-7ynccy` (ver
+`.github/workflows/deploy-pages.yml`). Una vez publicada, queda disponible en:
+
+**https://duquem5765-gif.github.io/Claude-pro/**
+
+Para instalarla:
+
+1. Abre esa URL en **Safari** en el iPad (tiene que ser Safari).
+2. Toca el ícono de compartir (el cuadrado con la flecha hacia arriba).
+3. Elige **"Añadir a pantalla de inicio"**.
+4. Listo — queda como app instalada, con su propio ícono, y funciona offline
+   (el service worker cachea la app; los datos siempre viven solo en el
+   dispositivo, con o sin conexión).
+
 ## Requisitos
 
 - Node.js 20 o superior

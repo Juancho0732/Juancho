@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { HashRouter, Route, Routes } from 'react-router-dom';
 import { AppShell } from './components/layout/AppShell';
 
 // Code-splitting por ruta: Gráficos (Recharts) y Proyectos (jsPDF vía export)
@@ -23,7 +23,7 @@ function RouteFallback() {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <AppShell>
         <Suspense fallback={<RouteFallback />}>
           <Routes>
@@ -41,6 +41,6 @@ export default function App() {
           </Routes>
         </Suspense>
       </AppShell>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
