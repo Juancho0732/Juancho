@@ -24,6 +24,11 @@
   --color-bad-soft: #fbeaea;
   --color-neutral: #71717a;
   --color-neutral-soft: #f1f1f2;
+
+  /* Paleta categórica para gráficos (orden fijo, validada para daltonismo). */
+  --color-series-1: #2a78d6;
+  --color-series-2: #eb6834;
+  --color-series-3: #1baf7a;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -49,6 +54,10 @@
     --color-bad-soft: #2c1616;
     --color-neutral: #9a9aa2;
     --color-neutral-soft: #232328;
+
+    --color-series-1: #3987e5;
+    --color-series-2: #d95926;
+    --color-series-3: #199e70;
   }
 }
 
