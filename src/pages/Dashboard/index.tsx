@@ -35,7 +35,7 @@ export function DashboardPage() {
         <PageHeader title="Marketing Metrics" subtitle="Convierte tus datos en decisiones." />
         <EmptyState
           title="Crea tu primer proyecto"
-          description="Un proyecto agrupa los datos, métricas e historial de un negocio, cliente o caso de estudio. Usa el selector de proyectos en la barra lateral para empezar."
+          description="Un proyecto agrupa los datos, métricas e historial de un negocio, cliente o caso de estudio. Usa el selector de proyectos de arriba para empezar."
         />
       </div>
     );

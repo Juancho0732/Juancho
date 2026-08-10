@@ -1,0 +1,202 @@
+/**
+ * Contenido del Modo Aprendizaje: qué significa, cómo se calcula, cómo
+ * interpretarlo y errores comunes para cada métrica del registro. Contenido
+ * educativo, no depende de datos del usuario ni de React.
+ */
+export interface MetricEducation {
+  whatItMeans: string;
+  howToCalculate: string;
+  howToInterpret: string;
+  commonMistakes: string[];
+}
+
+export const METRIC_EDUCATION: Record<string, MetricEducation> = {
+  cac: {
+    whatItMeans:
+      'El Costo de Adquisición de Cliente (CAC) es cuánto gasta tu negocio, en promedio, para conseguir un cliente nuevo.',
+    howToCalculate: 'CAC = (Gasto de marketing + Gasto de ventas) / Nuevos clientes adquiridos, en el mismo periodo.',
+    howToInterpret:
+      'Un CAC por sí solo no dice si es "bueno" o "malo": hay que compararlo con lo que ese cliente genera a lo largo del tiempo (LTV) y con cuánto tarda en recuperarse (Payback).',
+    commonMistakes: [
+      'Incluir solo el gasto en anuncios y olvidar salarios de ventas u otras herramientas, lo que subestima el CAC real.',
+      'Comparar el CAC de un mes con los clientes adquiridos de otro mes distinto.',
+      'Mirar el CAC aislado, sin contrastarlo con el LTV o el margen por cliente.',
+    ],
+  },
+  clv: {
+    whatItMeans:
+      'El Valor del Cliente (CLV o LTV) estima cuánto genera un cliente promedio a lo largo de toda su relación con tu negocio.',
+    howToCalculate:
+      'Método de ingresos: Ticket promedio × Frecuencia de compra anual × Vida del cliente en años. Método de margen y churn: (ARPU × Margen bruto %) / Tasa de churn.',
+    howToInterpret:
+      'El LTV cobra sentido cuando se compara con el CAC (ver LTV:CAC). Un LTV alto con un CAC igualmente alto puede no ser rentable.',
+    commonMistakes: [
+      'Usar ingresos en vez de margen cuando el objetivo es medir rentabilidad, no solo facturación.',
+      'Estimar la "vida del cliente" de forma optimista sin ningún dato histórico que la respalde.',
+      'Mezclar el método de cálculo entre distintos periodos del mismo proyecto, lo que hace que los números no sean comparables.',
+    ],
+  },
+  ltvCac: {
+    whatItMeans:
+      'El ratio LTV:CAC compara lo que un cliente vale a largo plazo contra lo que cuesta adquirirlo. Se expresa como un múltiplo, por ejemplo "3x".',
+    howToCalculate: 'LTV:CAC = LTV / CAC.',
+    howToInterpret:
+      'Un valor menor a 1x significa que gastas más en adquirir un cliente de lo que ese cliente genera: se pierde dinero en cada adquisición. Valores más altos indican más margen de maniobra. "3x" se cita a menudo como referencia, pero no es una regla universal: depende del modelo de negocio, del ciclo de ventas y de cuánto capital tienes para crecer.',
+    commonMistakes: [
+      'Tratar un benchmark de industria como una meta obligatoria en vez de una referencia orientativa.',
+      'Calcular LTV y CAC con datos de periodos distintos, lo que distorsiona el ratio.',
+      'Ignorar el Payback: un LTV:CAC alto con un payback de varios años puede seguir siendo arriesgado si el negocio necesita caja pronto.',
+    ],
+  },
+  payback: {
+    whatItMeans:
+      'El Periodo de Recuperación (Payback) es cuántos meses tarda tu negocio en recuperar, con el margen que deja cada cliente, lo que costó adquirirlo.',
+    howToCalculate: 'Payback = CAC / Margen mensual por cliente (no ingresos mensuales, sino margen).',
+    howToInterpret:
+      'Cuanto más corto, mejor: el capital invertido en adquisición vuelve más rápido y puede reinvertirse. Un payback muy largo expone al negocio si el cliente se va antes de ese punto.',
+    commonMistakes: [
+      'Usar ingresos mensuales en vez de margen mensual, lo que hace ver el payback más corto de lo que realmente es.',
+      'No considerar la posibilidad de que el cliente cancele antes de llegar al punto de recuperación (ver Churn).',
+      'Comparar el payback contra un plazo arbitrario sin considerar el ciclo de caja real del negocio.',
+    ],
+  },
+  roas: {
+    whatItMeans:
+      'El ROAS (Return On Ad Spend) mide cuántos ingresos genera cada unidad invertida en publicidad.',
+    howToCalculate: 'ROAS = Ingresos atribuidos a publicidad / Gasto publicitario.',
+    howToInterpret:
+      'Un ROAS de 3x significa que por cada 1 invertido en anuncios se generaron 3 en ingresos atribuidos. Es una medida de ingresos, no de rentabilidad.',
+    commonMistakes: [
+      'Confundir ROAS con rentabilidad: un ROAS alto con márgenes bajos puede seguir dejando pérdidas (ver ROI).',
+      'Usar ingresos totales en vez de ingresos específicamente atribuidos a esa campaña o canal.',
+      'Ignorar el costo de lo vendido y otros gastos al decidir si una campaña "funciona".',
+    ],
+  },
+  roi: {
+    whatItMeans: 'El ROI (Return On Investment) mide la ganancia neta obtenida de una inversión, como porcentaje de esa inversión.',
+    howToCalculate: 'ROI = (Ganancia obtenida − Inversión) / Inversión × 100.',
+    howToInterpret:
+      'Un ROI positivo indica ganancia neta; uno negativo, pérdida. A diferencia del ROAS, el ROI sí descuenta la inversión del resultado, por lo que refleja mejor la rentabilidad real.',
+    commonMistakes: [
+      'Usar ingresos brutos como "ganancia obtenida" en vez del beneficio neto de esa inversión.',
+      'Comparar el ROI de inversiones con horizontes de tiempo muy distintos sin anualizarlo.',
+      'Confundir ROI con ROAS: tienen fórmulas y significados distintos.',
+    ],
+  },
+  aov: {
+    whatItMeans: 'El Ticket Promedio (AOV) es el valor promedio de cada pedido o transacción.',
+    howToCalculate: 'AOV = Ingresos / Número de pedidos.',
+    howToInterpret:
+      'Subir el AOV (por ejemplo con upsells o paquetes) es una de las formas más directas de mejorar el LTV sin necesariamente aumentar la frecuencia de compra.',
+    commonMistakes: [
+      'Calcular el AOV sobre un periodo con muy pocos pedidos, lo que lo hace poco representativo.',
+      'No excluir pedidos cancelados o devueltos si el objetivo es medir ingresos reales.',
+    ],
+  },
+  grossMargin: {
+    whatItMeans: 'El Margen Bruto es lo que queda de los ingresos después de cubrir el costo directo de producir o entregar lo vendido.',
+    howToCalculate: 'Margen bruto = Ingresos − Costo de bienes vendidos (COGS). Margen bruto % = Margen bruto / Ingresos × 100.',
+    howToInterpret:
+      'Es el primer filtro de rentabilidad: si el margen bruto ya es bajo, va a ser muy difícil ser rentable después de sumar gastos de adquisición y operación.',
+    commonMistakes: [
+      'Confundir margen bruto con margen neto (el bruto no incluye gastos operativos, marketing ni impuestos).',
+      'Omitir costos variables reales (empaque, envío, comisiones) al calcular el costo de lo vendido.',
+    ],
+  },
+  netMargin: {
+    whatItMeans: 'El Margen Neto es lo que realmente le queda al negocio después de todos los costos y gastos, incluidos los operativos.',
+    howToCalculate: 'Margen neto = Ingresos − Costo de bienes vendidos − Gastos operativos. Margen neto % = Margen neto / Ingresos × 100.',
+    howToInterpret:
+      'Es la medida más completa de rentabilidad del periodo. Un margen neto negativo significa que el negocio opera con pérdidas en ese periodo, aunque el margen bruto sea saludable.',
+    commonMistakes: [
+      'Dejar fuera gastos operativos reales (salarios, herramientas, arriendo) por no tenerlos "a la mano".',
+      'Evaluar la salud del negocio solo con el margen bruto, sin llegar hasta el margen neto.',
+    ],
+  },
+  churn: {
+    whatItMeans: 'El Churn es el porcentaje de clientes que tu negocio pierde en un periodo determinado.',
+    howToCalculate: 'Churn % = Clientes perdidos / Clientes al inicio del periodo × 100.',
+    howToInterpret:
+      'Un churn alto erosiona el LTV y hace más difícil recuperar el CAC invertido en esos clientes. Mejorar la retención suele tener más impacto en la rentabilidad que seguir bajando el CAC.',
+    commonMistakes: [
+      'Calcular el churn con una base de clientes al inicio incorrecta o de un periodo distinto al de los clientes perdidos.',
+      'No distinguir entre churn de clientes nuevos y de clientes antiguos, que suelen comportarse muy distinto.',
+    ],
+  },
+  retention: {
+    whatItMeans: 'La Retención es el porcentaje de clientes que tu negocio conserva durante un periodo determinado. Es el complemento del churn.',
+    howToCalculate: 'Retención % = 100 − Churn %.',
+    howToInterpret: 'Cuanto más alta, mejor: significa que los clientes se quedan más tiempo, lo que aumenta directamente el LTV.',
+    commonMistakes: [
+      'Mirar solo la retención global sin segmentar por cohortes o tipo de cliente.',
+      'Confundir una retención alta puntual con una tendencia sostenida, sin mirar varios periodos.',
+    ],
+  },
+  arpu: {
+    whatItMeans: 'El ARPU (Average Revenue Per User) es el ingreso promedio que genera cada usuario activo en un periodo.',
+    howToCalculate: 'ARPU = Ingresos del periodo / Usuarios activos en ese mismo periodo.',
+    howToInterpret:
+      'Es útil para ver la monetización por usuario a lo largo del tiempo, especialmente en negocios de suscripción o recurrentes.',
+    commonMistakes: [
+      'Confundir ARPU (periódico) con "Revenue per customer" (acumulado a lo largo de toda la relación).',
+      'Usar el total de usuarios registrados en vez de usuarios activos, lo que subestima el ARPU real.',
+    ],
+  },
+  cpa: {
+    whatItMeans:
+      'El CPA (Costo Por Adquisición/Conversión) es cuánto cuesta, en promedio, cada conversión de un tipo específico (compra, registro, lead, descarga). El "costo por lead" es un CPA donde la conversión es específicamente un lead.',
+    howToCalculate: 'CPA = Costo de campaña / Número de conversiones de ese tipo.',
+    howToInterpret:
+      'Sirve para comparar la eficiencia de distintas campañas o canales en generar un tipo de conversión concreto, antes de que ese lead o registro se convierta en cliente pagante.',
+    commonMistakes: [
+      'Mezclar distintos tipos de conversión (leads y compras) en un mismo cálculo de CPA.',
+      'No dar seguimiento a cuántos de esos leads o registros terminan siendo clientes reales (eso lo mide el CAC, no el CPA).',
+    ],
+  },
+  cpc: {
+    whatItMeans: 'El CPC (Costo Por Clic) es cuánto paga tu negocio, en promedio, por cada clic en un anuncio.',
+    howToCalculate: 'CPC = Gasto publicitario / Clics.',
+    howToInterpret: 'Un CPC más bajo generalmente permite generar más tráfico con el mismo presupuesto, pero solo importa si ese tráfico convierte.',
+    commonMistakes: [
+      'Optimizar solo para bajar el CPC sin mirar la tasa de conversión de ese tráfico.',
+      'Comparar el CPC entre canales con audiencias muy distintas como si fueran directamente equivalentes.',
+    ],
+  },
+  cpm: {
+    whatItMeans: 'El CPM (Costo Por Mil impresiones) es cuánto cuesta mostrar un anuncio 1.000 veces.',
+    howToCalculate: 'CPM = (Gasto publicitario / Impresiones) × 1.000.',
+    howToInterpret: 'Es más relevante para campañas de alcance y reconocimiento de marca que para campañas orientadas directamente a conversión.',
+    commonMistakes: [
+      'Usar el CPM como única métrica de éxito de una campaña orientada a ventas, cuando no mide conversión.',
+      'No considerar que impresiones no visibles o duplicadas pueden inflar el conteo.',
+    ],
+  },
+  ctr: {
+    whatItMeans: 'El CTR (Click-Through Rate) es el porcentaje de personas que, tras ver un anuncio, hacen clic en él.',
+    howToCalculate: 'CTR % = (Clics / Impresiones) × 100.',
+    howToInterpret: 'Un CTR más alto suele indicar un anuncio o creativo más relevante para la audiencia que lo vio.',
+    commonMistakes: [
+      'Optimizar solo por CTR sin mirar si esos clics terminan convirtiendo (ver Conversion Rate).',
+      'Comparar el CTR entre formatos de anuncio muy distintos (video vs. banner) como si fueran equivalentes.',
+    ],
+  },
+  conversionRate: {
+    whatItMeans: 'La Tasa de Conversión mide qué porcentaje de visitantes o usuarios completan una acción específica (compra, registro, etc.).',
+    howToCalculate: 'Conversion Rate % = (Conversiones / Visitantes) × 100.',
+    howToInterpret: 'Es una de las palancas más directas para mejorar el resultado de una campaña sin necesariamente gastar más en atraer tráfico.',
+    commonMistakes: [
+      'Medir la conversión sobre una base de tráfico que incluye bots o tráfico no cualificado.',
+      'Comparar tasas de conversión entre páginas o audiencias con intenciones de compra muy distintas.',
+    ],
+  },
+  revenuePerCustomer: {
+    whatItMeans: 'Es el ingreso total que, en promedio, ha generado cada cliente a lo largo de toda su relación con el negocio hasta ahora.',
+    howToCalculate: 'Revenue per Customer = Ingresos totales acumulados / Número total de clientes.',
+    howToInterpret:
+      'A diferencia del ARPU (que es periódico), esta métrica es acumulada: sirve para ver el valor generado hasta la fecha, no el ritmo actual de monetización.',
+    commonMistakes: [
+      'Confundirlo con ARPU y usarlos indistintamente en el mismo reporte.',
+      'Incluir clientes que nunca llegaron a generar ingresos (leads, no clientes) en el denominador.',
+    ],
+  },
+};

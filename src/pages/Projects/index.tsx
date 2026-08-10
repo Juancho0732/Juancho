@@ -33,9 +33,9 @@ export function ProjectsPage() {
     downloadTextFile(`${activeProject.name}.csv`, csv, 'text/csv;charset=utf-8');
   }
 
-  function handleExportPdf() {
+  async function handleExportPdf() {
     if (!activeProject || !activeSnapshot) return;
-    const doc = generateAnalysisPdf(activeProject, activeSnapshot);
+    const doc = await generateAnalysisPdf(activeProject, activeSnapshot);
     doc.save(`${activeProject.name} - ${activeSnapshot.label}.pdf`);
   }
 

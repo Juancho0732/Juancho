@@ -1,5 +1,48 @@
-import { ComingSoon } from '../ComingSoon';
+import { Link } from 'react-router-dom';
+import { METRIC_REGISTRY, type MetricCategory } from '../../core/metricRegistry';
+import { PageHeader } from '../../components/ui/PageHeader';
+
+const CATEGORY_LABELS: Record<MetricCategory, string> = {
+  acquisition: 'Adquisición',
+  value: 'Valor del cliente',
+  profitability: 'Rentabilidad',
+  retention: 'Retención',
+  advertising: 'Publicidad',
+  conversion: 'Conversión',
+};
+
+const CATEGORY_ORDER: MetricCategory[] = ['acquisition', 'value', 'profitability', 'retention', 'advertising', 'conversion'];
 
 export function LearnPage() {
-  return <ComingSoon title="Aprendizaje" subtitle="Qué significa cada métrica, cómo se calcula, cómo interpretarla y errores comunes." />;
+  return (
+    <div>
+      <PageHeader title="Aprendizaje" subtitle="Qué significa cada métrica, cómo se calcula, cómo interpretarla y errores comunes." />
+
+      <div className="flex flex-col gap-8">
+        {CATEGORY_ORDER.map((category) => {
+          const metrics = METRIC_REGISTRY.filter((m) => m.category === category);
+          if (metrics.length === 0) return null;
+          return (
+            <section key={category}>
+              <h2 className="text-[13px] font-semibold text-(--color-ink-faint) uppercase tracking-wide mb-3">
+                {CATEGORY_LABELS[category]}
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {metrics.map((metric) => (
+                  <Link
+                    key={metric.id}
+                    to={`/aprendizaje/${metric.id}`}
+                    className="rounded-xl border border-(--color-border) bg-(--color-surface) p-4 hover:border-(--color-border-strong) hover:shadow-sm transition-all"
+                  >
+                    <p className="text-[14px] font-semibold text-(--color-ink)">{metric.shortName}</p>
+                    <p className="text-[12.5px] text-(--color-ink-muted) mt-0.5">{metric.name}</p>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          );
+        })}
+      </div>
+    </div>
+  );
 }

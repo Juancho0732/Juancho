@@ -1,32 +1,60 @@
-# React + TypeScript + Vite
+# Marketing Metrics
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Aplicación web (PWA), optimizada para iPad, para calcular, comparar y entender
+métricas financieras y de marketing. Recibe datos del negocio, calcula 18
+métricas con fórmulas documentadas, las explica en lenguaje sencillo y ofrece
+un simulador de escenarios, diagnóstico automático y un Health Score.
 
-Currently, two official plugins are available:
+Todos los datos se guardan **solo en el dispositivo** (IndexedDB del
+navegador) — no hay backend ni se envía información a servicios externos.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Requisitos
 
-## React Compiler
+- Node.js 20 o superior
+- npm
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Ejecutar en local
 
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Abre `http://localhost:5173` en el navegador. La app funciona igual en
+escritorio, iPad e iPhone (diseño responsive, sidebar en iPad/desktop, barra
+inferior en iPhone).
+
+Para instalarla como PWA (pantalla de inicio de iPad): abre la URL en Safari,
+toca el botón de compartir y selecciona "Añadir a pantalla de inicio". Para
+probar el modo instalado/offline hace falta servir un build de producción
+(ver abajo), no el servidor de desarrollo.
+
+## Otros comandos
+
+```bash
+npm run build      # build de producción (tsc + vite build), genera /dist
+npm run preview    # sirve el build de producción en local
+npm run test       # corre los 163 tests (Vitest) una vez
+npm run test:watch # corre los tests en modo watch
+npm run lint       # oxlint
+```
+
+## Arquitectura
+
+- `src/core/` — motor de cálculo: fórmulas puras y testeadas (sin React),
+  validaciones, motor de diagnóstico, Health Score y motor de escenarios.
+  Cada fórmula documenta su fórmula, variaciones conocidas y la decisión
+  tomada directamente en el código.
+- `src/data/` — capa de datos local (Dexie/IndexedDB): proyectos, periodos
+  (snapshots) y escenarios, más exportación/importación (CSV, PDF).
+- `src/components/` — componentes de UI reutilizables (layout, calculadora
+  genérica dirigida por metadata, gráficos, UI base).
+- `src/pages/` — una página por sección (Dashboard, Calculadoras, Simulador,
+  Diagnóstico, Health Score, Gráficos, Historial, Proyectos, Aprendizaje).
+- `src/content/` — contenido educativo del Modo Aprendizaje.
+
+## Privacidad
+
+No hay login ni sincronización entre dispositivos: si se borra el
+navegador/dispositivo sin exportar antes (CSV desde Proyectos), los datos se
+pierden. Se recomienda exportar periódicamente como respaldo.

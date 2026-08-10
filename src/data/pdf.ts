@@ -3,9 +3,11 @@
  * principales, Health Score y diagnóstico. Se genera enteramente en el
  * navegador del usuario (jsPDF) — no se envía ningún dato a un servicio
  * externo para producir el archivo.
+ *
+ * jsPDF y jspdf-autotable se importan de forma dinámica (~250 KB) para que
+ * su peso no forme parte del bundle inicial de la app: solo se descargan
+ * cuando el usuario realmente exporta un PDF.
  */
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import { computeComparisonMetrics, COMPARISON_METRIC_IDS } from '../core/computeComparisonMetrics';
 import { computeHealthScore } from '../core/healthScore/score';
 import { runDiagnostics } from '../core/diagnostics/rules';
@@ -13,7 +15,8 @@ import { getMetricDefinition } from '../core/metricRegistry';
 import { formatMetricValue } from '../core/format';
 import type { Project, Snapshot } from './db';
 
-export function generateAnalysisPdf(project: Project, snapshot: Snapshot): jsPDF {
+export async function generateAnalysisPdf(project: Project, snapshot: Snapshot) {
+  const [{ jsPDF }, { default: autoTable }] = await Promise.all([import('jspdf'), import('jspdf-autotable')]);
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
   const marginX = 40;
   let y = 50;

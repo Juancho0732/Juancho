@@ -46,7 +46,7 @@ export function CalculatorDetailPage() {
     return (
       <div>
         <PageHeader title={definition.name} />
-        <EmptyPanel text="Crea o selecciona un proyecto en la barra lateral antes de introducir datos." />
+        <EmptyPanel text="Crea o selecciona un proyecto (arriba en iPhone, en la barra lateral en iPad) antes de introducir datos." />
       </div>
     );
   }
@@ -93,6 +93,11 @@ export function CalculatorDetailPage() {
       <PageHeader
         title={definition.name}
         subtitle={activeSnapshot ? `${activeProject.name} · ${activeSnapshot.label}` : activeProject.name}
+        actions={
+          <Link to={`/aprendizaje/${definition.id}`} className="text-[13px] font-medium text-(--color-brand) hover:text-(--color-brand-ink)">
+            ¿Qué significa esta métrica?
+          </Link>
+        }
       />
 
       {!activeSnapshot && (
