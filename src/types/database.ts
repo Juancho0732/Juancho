@@ -62,6 +62,11 @@ export type Review = {
   updated_at: string;
 };
 
+/** `listReviewsForPlace` incluye el nombre del autor vía join con `profiles`. */
+export type ReviewWithAuthor = Review & {
+  profiles: { display_name: string } | null;
+};
+
 export type Favorite = {
   user_id: string;
   place_id: string;

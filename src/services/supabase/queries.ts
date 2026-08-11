@@ -1,4 +1,12 @@
-import type { Category, Place, PlaceImage, PlaceWithDistance, Profile, Review } from '@/types/database';
+import type {
+  Category,
+  Place,
+  PlaceImage,
+  PlaceWithDistance,
+  Profile,
+  Review,
+  ReviewWithAuthor,
+} from '@/types/database';
 
 import { supabase } from './client';
 
@@ -100,14 +108,14 @@ export async function listPlaceImages(placeId: string): Promise<PlaceImage[]> {
   return data;
 }
 
-export async function listReviewsForPlace(placeId: string): Promise<Review[]> {
+export async function listReviewsForPlace(placeId: string): Promise<ReviewWithAuthor[]> {
   const { data, error } = await supabase
     .from('reviews')
-    .select('*')
+    .select('*, profiles(display_name)')
     .eq('place_id', placeId)
     .order('created_at', { ascending: false });
   if (error) throw error;
-  return data;
+  return data as unknown as ReviewWithAuthor[];
 }
 
 export async function listFavoritePlaceIds(userId: string): Promise<string[]> {

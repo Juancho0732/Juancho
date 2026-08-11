@@ -1,7 +1,9 @@
 export { Button } from './Button';
 export { Card } from './Card';
 export { Chip } from './Chip';
+export { ConfirmDialog } from './ConfirmDialog';
 export { FormInput } from './FormInput';
 export { Input } from './Input';
 export { Screen } from './Screen';
+export { StarRating } from './StarRating';
 export { Text } from './Text';

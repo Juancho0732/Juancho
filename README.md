@@ -7,7 +7,7 @@ propios (no inventados).
 
 El análisis completo de arquitectura, modelo de datos, flujo de IA, riesgos y decisiones está
 en [`docs/00-fase0-analisis.md`](docs/00-fase0-analisis.md). Este README cubre lo ya
-implementado (Fases 1 a 5).
+implementado (Fases 1 a 6).
 
 ## Estado del proyecto
 
@@ -23,7 +23,9 @@ implementado (Fases 1 a 5).
   datos MOCK reales. Ver detalle abajo.
 - ✅ **Fase 5** — Maps: mapa en el detalle de lugar, "Cerca de ti" en Home y cálculo de
   distancia real. Ver detalle abajo.
-- ⏳ Fases 6–8 — pendientes.
+- ✅ **Fase 6** — Reviews: crear, editar, eliminar y calificar, con recálculo de promedio. Ver
+  detalle abajo.
+- ⏳ Fases 7–8 — pendientes.
 
 ## Stack
 
@@ -86,7 +88,8 @@ src/
     places/          # hooks de categorías/lugares, FiltersSheet, localidades curadas
     favorites/       # hooks de favoritos (listar, alternar)
     location/        # useUserLocation (expo-location, permiso bajo demanda)
-    ai-search/, reviews/ # se llenan en fases siguientes
+    reviews/         # validación, mutations (upsert/delete), ReviewFormSheet
+    ai-search/       # se llena en Fase 7
   services/         # supabase client + queries tipadas, query client, ranking
   hooks/, types/, utils/
 app.config.ts       # config de Expo (no app.json) — lee GOOGLE_MAPS_API_KEY del entorno
@@ -184,8 +187,7 @@ en vez de placeholders:
   modal/bottom sheet sobre la propia pantalla, no como ruta separada — la simplificación de UX
   que quedó aprobada en la Fase 0.
 - **Place Detail** — datos reales de `places` + `place_images`, tags, horario, rating, botón de
-  favorito y mapa (Fase 5). La lista/creación de reseñas queda para la Fase 6 (por ahora solo se
-  muestra el rating/conteo ya cacheado).
+  favorito, mapa (Fase 5) y enlace a las reseñas (Fase 6).
 - **Favoritos** — `listFavoritePlaces` (join `favorites` → `places`) y toggle optimista vía
   `useToggleFavorite`, invalidando la caché de React Query.
 
@@ -221,6 +223,27 @@ pasa como variable de entorno de build (`GOOGLE_MAPS_API_KEY`, sin prefijo `EXPO
 `app.config.ts` la vuelca en `AndroidManifest.xml` al hacer `expo prebuild`/EAS Build — nunca
 llega al bundle de JavaScript).
 
+## Reseñas (Fase 6)
+
+- **Una reseña por usuario por lugar, editable** — `upsertReview` usa `.upsert(..., { onConflict:
+  'place_id,user_id' })` sobre el constraint único ya creado en Fase 2: crear y editar son la
+  misma operación a nivel de base de datos. La UI decide si abre el formulario vacío ("Escribir
+  reseña") o precargado (tocar "Editar" en la reseña propia) según si el usuario ya tiene una.
+- **Autor visible** — `listReviewsForPlace` hace `select('*, profiles(display_name)')` (posible
+  porque `profiles` es de lectura pública desde la Fase 2) para mostrar quién escribió cada
+  reseña sin una consulta aparte.
+- **Rating promedio** — lo recalcula el trigger de Fase 2 en cada INSERT/UPDATE/DELETE de
+  `reviews`; el cliente solo invalida las queries relevantes (`reviews`, `place`, `places`,
+  `nearby-places`, `favorite-places`) para que Home/Search/Detalle reflejen el nuevo promedio sin
+  volver a calcularlo en el cliente.
+- **Formulario** (`ReviewFormSheet`, mismo patrón de bottom sheet que `FiltersSheet`): estrellas
+  (`StarRating`, reutilizado también de solo lectura para mostrar el promedio), comentario
+  opcional, monto pagado opcional y ocasión (chips: amigos/pareja/familia/solo/trabajo).
+- **Confirmación de borrado sin `Alert.alert`** — `Alert.alert` de React Native **no hace nada en
+  react-native-web** (es un no-op ahí). Se detectó al construir esta fase, así que la confirmación
+  de "Eliminar reseña" usa un `ConfirmDialog` propio (modal) en vez de `Alert`, para que también
+  funcione en la vía rápida de desarrollo web.
+
 ## Testing
 
 ```bash
@@ -232,9 +255,11 @@ npm run lint      # ESLint
 Fase 3 agrega pruebas unitarias de los esquemas de validación (login/registro) y de la capa
 `api.ts` con el cliente Supabase mockeado (credenciales inválidas, correo ya registrado,
 confirmación de correo pendiente, etc.). Fase 4 agrega pruebas de `queries.ts` (filtros de
-`listPlaces`, saneo del término de búsqueda, favoritos), y Fase 5 suma `listNearbyPlaces` (llamada
-a la RPC con los parámetros correctos) y `formatDistance`/`formatCOP`/`formatPriceRange` — todo
-con el cliente Supabase mockeado, sin red ni proyecto real.
+`listPlaces`, saneo del término de búsqueda, favoritos), Fase 5 suma `listNearbyPlaces` (llamada a
+la RPC con los parámetros correctos) y `formatDistance`/`formatCOP`/`formatPriceRange`, y Fase 6
+agrega el esquema de validación de reseñas (rating 1-5, comentario ≤500 caracteres, monto pagado
+opcional) y `listReviewsForPlace`/`upsertReview`/`deleteReview` — todo con el cliente Supabase
+mockeado, sin red ni proyecto real.
 
 `supabase/tests/rls_smoke_test.sql` (Fase 2) ahora también prueba `nearby_places` contra Postgres
 real: que funcione como rol `anon` y que ningún resultado supere el radio pedido.
@@ -242,12 +267,12 @@ real: que funcione como rol `anon` y que ningún resultado supere el radio pedid
 Además, cada fase con UI se verificó con un recorrido de Playwright contra datos reales: sin
 Docker disponible en este entorno para levantar Supabase local, se armó un servidor REST mínimo
 (no forma parte del repo) que habla el mismo protocolo que `supabase-js` usa contra el Postgres ya
-sembrado en la Fase 2 — incluyendo el endpoint RPC para `nearby_places`. En Fase 5 se simuló
-además la geolocalización del navegador (`context.setGeolocation`) para confirmar que "Cerca de
-ti" pide permiso, consulta la RPC y muestra distancias reales, y que el fallback de mapa en web
-(OpenStreetMap) renderiza en vez de romper el bundle.
+sembrado en la Fase 2 — incluyendo los endpoints RPC y `upsert`. En Fase 6 se recorrió el ciclo
+completo crear → editar → eliminar una reseña, confirmando que el rating cacheado del lugar se
+actualiza en pantalla en cada paso y que el diálogo de confirmación de borrado funciona en web.
 
 ## Próximos pasos
 
-Fase 6 (Reviews): crear/editar/eliminar reseñas, rating y recálculo de promedio (el trigger de
-Fase 2 ya lo mantiene cacheado en `places`).
+Fase 7 (AI Search): input de lenguaje natural, Edge Function que interpreta la intención, valida
+los parámetros, consulta Supabase con el ranking de la Fase 0 y genera una explicación basada
+únicamente en los resultados reales obtenidos.

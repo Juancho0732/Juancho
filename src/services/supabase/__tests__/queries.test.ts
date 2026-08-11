@@ -46,11 +46,14 @@ jest.mock('@/services/supabase/client', () => ({
 // eslint-disable-next-line import/first -- el mock de arriba debe declararse antes de importar '../queries'
 import {
   addFavorite,
+  deleteReview,
   listFavoritePlaceIds,
   listFavoritePlaces,
   listNearbyPlaces,
   listPlaces,
+  listReviewsForPlace,
   removeFavorite,
+  upsertReview,
 } from '../queries';
 
 beforeEach(() => {
@@ -201,5 +204,101 @@ describe('listNearbyPlaces', () => {
     mockRpc.mockResolvedValue({ data: null, error: new Error('boom') });
 
     await expect(listNearbyPlaces({ lat: 0, lng: 0 })).rejects.toThrow('boom');
+  });
+});
+
+describe('reviews', () => {
+  it('listReviewsForPlace incluye el nombre del autor vía join con profiles', async () => {
+    const { builder, calls } = createQueryBuilder({
+      data: [{ id: 'r1', place_id: 'place-1', profiles: { display_name: 'Ana' } }],
+      error: null,
+    });
+    mockFrom.mockReturnValue(builder);
+
+    const result = await listReviewsForPlace('place-1');
+
+    expect(mockFrom).toHaveBeenCalledWith('reviews');
+    expect(calls).toContainEqual({ method: 'select', args: ['*, profiles(display_name)'] });
+    expect(calls).toContainEqual({ method: 'eq', args: ['place_id', 'place-1'] });
+    expect(calls).toContainEqual({ method: 'order', args: ['created_at', { ascending: false }] });
+    expect(result[0]?.profiles?.display_name).toBe('Ana');
+  });
+
+  it('upsertReview usa onConflict place_id,user_id para poder editar', async () => {
+    const { builder, calls } = createQueryBuilder({
+      data: { id: 'r1', place_id: 'place-1', user_id: 'user-1', rating: 5 },
+      error: null,
+    });
+    mockFrom.mockReturnValue(builder);
+
+    await upsertReview({
+      placeId: 'place-1',
+      userId: 'user-1',
+      rating: 5,
+      comment: 'Excelente',
+      amountPaid: 50000,
+      occasion: 'pareja',
+    });
+
+    expect(mockFrom).toHaveBeenCalledWith('reviews');
+    expect(calls).toContainEqual({
+      method: 'upsert',
+      args: [
+        {
+          place_id: 'place-1',
+          user_id: 'user-1',
+          rating: 5,
+          comment: 'Excelente',
+          amount_paid: 50000,
+          occasion: 'pareja',
+        },
+        { onConflict: 'place_id,user_id' },
+      ],
+    });
+  });
+
+  it('upsertReview convierte campos opcionales ausentes a null', async () => {
+    const { builder, calls } = createQueryBuilder({ data: {}, error: null });
+    mockFrom.mockReturnValue(builder);
+
+    await upsertReview({ placeId: 'place-1', userId: 'user-1', rating: 3 });
+
+    expect(calls).toContainEqual({
+      method: 'upsert',
+      args: [
+        {
+          place_id: 'place-1',
+          user_id: 'user-1',
+          rating: 3,
+          comment: null,
+          amount_paid: null,
+          occasion: null,
+        },
+        { onConflict: 'place_id,user_id' },
+      ],
+    });
+  });
+
+  it('deleteReview borra por id', async () => {
+    const { builder, calls } = createQueryBuilder({ data: null, error: null });
+    mockFrom.mockReturnValue(builder);
+
+    await deleteReview('review-1');
+
+    expect(mockFrom).toHaveBeenCalledWith('reviews');
+    expect(calls).toContainEqual({ method: 'delete', args: [] });
+    expect(calls).toContainEqual({ method: 'eq', args: ['id', 'review-1'] });
+  });
+
+  it('propaga el error de Supabase al crear/editar una reseña (ej. rating fuera de rango)', async () => {
+    const { builder } = createQueryBuilder({
+      data: null,
+      error: new Error('new row for relation "reviews" violates check constraint'),
+    });
+    mockFrom.mockReturnValue(builder);
+
+    await expect(upsertReview({ placeId: 'place-1', userId: 'user-1', rating: 9 })).rejects.toThrow(
+      'check constraint',
+    );
   });
 });
