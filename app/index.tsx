@@ -1,14 +1,29 @@
 import { router } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { Button, Screen, Text } from '@/components/ui';
 import { theme } from '@/design-system/theme';
+import { useAuthStore } from '@/features/auth';
 
 /**
  * Splash. La app nativa ya muestra el splash de sistema (icono) mientras carga
- * el bundle; esta pantalla es el primer contenido interactivo.
+ * el bundle; esta pantalla es el primer contenido interactivo. Mientras se
+ * resuelve la sesión persistida solo se muestra un loader — si hay sesión,
+ * useProtectedRoute redirige a /home antes de que el usuario vea nada más.
  */
 export default function SplashScreen() {
+  const status = useAuthStore((state) => state.status);
+
+  if (status === 'loading') {
+    return (
+      <Screen>
+        <View style={styles.center}>
+          <ActivityIndicator color={theme.colors.primary} />
+        </View>
+      </Screen>
+    );
+  }
+
   return (
     <Screen>
       <View style={styles.center}>

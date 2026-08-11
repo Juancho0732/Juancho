@@ -7,7 +7,7 @@ propios (no inventados).
 
 El análisis completo de arquitectura, modelo de datos, flujo de IA, riesgos y decisiones está
 en [`docs/00-fase0-analisis.md`](docs/00-fase0-analisis.md). Este README cubre lo ya
-implementado (Fases 1 y 2).
+implementado (Fases 1 a 3).
 
 ## Estado del proyecto
 
@@ -17,7 +17,9 @@ implementado (Fases 1 y 2).
   real (auth, datos, IA) se implementa en las fases siguientes.
 - ✅ **Fase 2** — Database: esquema SQL, RLS, triggers de rating, datos MOCK y capa de queries
   tipada. Ver detalle abajo.
-- ⏳ Fases 3–8 — pendientes.
+- ✅ **Fase 3** — Authentication: registro, login, logout, sesión persistente y protección de
+  rutas. Ver detalle abajo.
+- ⏳ Fases 4–8 — pendientes.
 
 ## Stack
 
@@ -70,10 +72,12 @@ error explícito (`src/services/supabase/client.ts`) en vez de fallar silenciosa
 app/            # rutas (Expo Router) — solo UI/navegación, sin lógica de negocio
 src/
   design-system/  # tokens y theme — única fuente de verdad para estilos
-  components/ui/   # primitivos reutilizables (Button, Card, Input, Text, Screen)
+  components/ui/   # primitivos reutilizables (Button, Card, Input, FormInput, Text, Screen)
   components/domain/ # componentes específicos del dominio (se van llenando por fase)
-  features/         # lógica por feature (auth, places, ai-search, reviews, favorites)
-  services/         # supabase client, query client, ranking
+  features/
+    auth/            # api (signUp/signIn/signOut), store de sesión, validación, protección de rutas
+    places/, ai-search/, reviews/, favorites/ # se llenan en fases siguientes
+  services/         # supabase client + queries tipadas, query client, ranking
   hooks/, types/, utils/
 supabase/
   migrations/       # SQL versionado — esquema, RLS, triggers
@@ -129,6 +133,32 @@ migraciones y una batería de pruebas de RLS contra un Postgres local plano. Ver
 policies (lectura pública, aislamiento por usuario, bloqueo de escritura directa en `places`,
 unicidad de reseñas) se comportan como se documentó.
 
+## Autenticación (Fase 3)
+
+Usa Supabase Auth directamente (email/contraseña) — sin servidor propio. Piezas:
+
+- `src/features/auth/api.ts` — `signUp`/`signIn`/`signOut`, envuelven `supabase.auth.*`.
+- `src/features/auth/store.ts` — store Zustand con la sesión actual y el estado
+  (`loading` | `signedIn` | `signedOut`).
+- `src/features/auth/useInitAuth.ts` — lee la sesión persistida (AsyncStorage) al arrancar y se
+  suscribe a `onAuthStateChange`; se llama una sola vez en `app/_layout.tsx`.
+- `src/features/auth/useProtectedRoute.ts` — según el estado de sesión, redirige: sin sesión solo
+  se puede ver splash/onboarding/`(auth)`; con sesión, esas pantallas redirigen a `/home`. El
+  resto de la app (tabs, detalle de lugar, recomendaciones) requiere sesión.
+- `src/features/auth/validation.ts` — esquemas zod para los formularios de login/registro.
+
+**Decisión de producto que conviene que confirmes:** por ahora la app exige cuenta para todo
+excepto splash/onboarding/login/registro — no hay modo "explorar como invitado". Es la lectura
+más simple del flujo que describiste (Splash → Onboarding → Login/Register → Home) y evita
+construir dos rutas de datos (pública vs. autenticada) en el MVP. Si prefieres permitir explorar
+lugares sin cuenta y pedir login solo para guardar favoritos/reseñas, es un cambio acotado a
+`useProtectedRoute` — avísame y lo ajustamos.
+
+El registro crea el usuario en Supabase Auth y un trigger de base de datos (Fase 2) inserta
+automáticamente su fila en `profiles`. Si el proyecto de Supabase tiene activada la confirmación
+por correo, el registro no deja sesión iniciada de inmediato — la pantalla lo detecta y muestra
+"revisa tu correo" en vez de navegar.
+
 ## Testing
 
 ```bash
@@ -137,7 +167,11 @@ npm run typecheck  # tsc --noEmit
 npm run lint      # ESLint
 ```
 
+Fase 3 agrega pruebas unitarias de los esquemas de validación (login/registro) y de la capa
+`api.ts` con el cliente Supabase mockeado (credenciales inválidas, correo ya registrado,
+confirmación de correo pendiente, etc.) — no dependen de red ni de un proyecto Supabase real.
+
 ## Próximos pasos
 
-Fase 3 (Authentication): registro, login, logout, sesión persistente y protección de rutas sobre
-el esquema y el cliente Supabase ya configurados.
+Fase 4 (Places): lista de lugares, detalle, categorías, búsqueda/filtros y favoritos, consumiendo
+`src/services/supabase/queries.ts` (Fase 2) sobre rutas ya protegidas por sesión (Fase 3).

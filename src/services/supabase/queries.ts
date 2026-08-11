@@ -1,4 +1,4 @@
-import type { Category, Place, PlaceImage, Review } from '@/types/database';
+import type { Category, Place, PlaceImage, Profile, Review } from '@/types/database';
 
 import { supabase } from './client';
 
@@ -7,6 +7,16 @@ import { supabase } from './client';
  * Sin lógica de UI. Cada función lanza si Supabase devuelve un error, para que
  * el llamador decida cómo mostrarlo (no lo ocultamos silenciosamente).
  */
+
+export async function getProfile(userId: string): Promise<Profile | null> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
 
 export async function listCategories(): Promise<Category[]> {
   const { data, error } = await supabase.from('categories').select('*').order('name');
