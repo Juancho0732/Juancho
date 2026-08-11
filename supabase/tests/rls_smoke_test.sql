@@ -102,4 +102,14 @@ set role anon;
 select name from public.places where name ilike '%café%' or description ilike '%café%' limit 3;
 reset role;
 
+\echo '--- 15) RPC nearby_places (Fase 5): funciona como anon, respeta el radio y el límite ---'
+set role anon;
+select name, locality, round(distance_m::numeric, 0) as distance_m
+from public.nearby_places(4.6486, -74.0628, 5, 3);
+-- ninguna fila debería superar max_distance_km * 1000 (5km -> 5000m)
+select count(*) as filas_fuera_de_radio
+from public.nearby_places(4.6486, -74.0628, 5, 1000)
+where distance_m > 5000;
+reset role;
+
 \echo '--- listo ---'

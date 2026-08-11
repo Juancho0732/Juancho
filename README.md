@@ -7,7 +7,7 @@ propios (no inventados).
 
 El análisis completo de arquitectura, modelo de datos, flujo de IA, riesgos y decisiones está
 en [`docs/00-fase0-analisis.md`](docs/00-fase0-analisis.md). Este README cubre lo ya
-implementado (Fases 1 a 4).
+implementado (Fases 1 a 5).
 
 ## Estado del proyecto
 
@@ -21,7 +21,9 @@ implementado (Fases 1 a 4).
   rutas. Ver detalle abajo.
 - ✅ **Fase 4** — Places: lista, detalle, categorías, búsqueda con filtros y favoritos, con
   datos MOCK reales. Ver detalle abajo.
-- ⏳ Fases 5–8 — pendientes.
+- ✅ **Fase 5** — Maps: mapa en el detalle de lugar, "Cerca de ti" en Home y cálculo de
+  distancia real. Ver detalle abajo.
+- ⏳ Fases 6–8 — pendientes.
 
 ## Stack
 
@@ -36,6 +38,8 @@ Ver justificación de cada elección en `docs/00-fase0-analisis.md`.
   las pantallas de datos no tendrán nada que mostrar
 - Para iOS/Android: `expo-dev-client` (este proyecto usa `react-native-maps`, que **no** funciona
   en Expo Go — hay que compilar un dev client o usar `--platform web` para desarrollo rápido de UI)
+- Para el mapa en Android: `GOOGLE_MAPS_API_KEY` (ver sección "Mapas y ubicación" más abajo). En
+  iOS no hace falta — usa Apple Maps sin costo.
 
 ## Instalación
 
@@ -64,6 +68,7 @@ Ver `.env.example`. Resumen:
 | `AI_PROVIDER`, `AI_API_KEY`, `AI_MODEL` | Solo Supabase Edge Function | Nunca en el cliente |
 | `SUPABASE_SERVICE_ROLE_KEY` | Solo Supabase Edge Function | Nunca en el cliente |
 | `AI_RATE_LIMIT_PER_MINUTE` | Solo Supabase Edge Function | Control de costo |
+| `GOOGLE_MAPS_API_KEY` | Solo build nativo Android (`app.config.ts`) | No llega al bundle JS |
 
 Sin `EXPO_PUBLIC_SUPABASE_URL`/`EXPO_PUBLIC_SUPABASE_ANON_KEY` la app falla al iniciar con un
 error explícito (`src/services/supabase/client.ts`) en vez de fallar silenciosamente más adelante.
@@ -80,11 +85,13 @@ src/
     auth/            # api (signUp/signIn/signOut), store de sesión, validación, protección de rutas
     places/          # hooks de categorías/lugares, FiltersSheet, localidades curadas
     favorites/       # hooks de favoritos (listar, alternar)
+    location/        # useUserLocation (expo-location, permiso bajo demanda)
     ai-search/, reviews/ # se llenan en fases siguientes
   services/         # supabase client + queries tipadas, query client, ranking
   hooks/, types/, utils/
+app.config.ts       # config de Expo (no app.json) — lee GOOGLE_MAPS_API_KEY del entorno
 supabase/
-  migrations/       # SQL versionado — esquema, RLS, triggers
+  migrations/       # SQL versionado — esquema, RLS, triggers, RPCs
   seed.sql            # datos MOCK/DEMO (generado por seed/generate_seed.py)
   seed/generate_seed.py # script que produce seed.sql (reproducible, seed fijo)
   functions/ai-search/ # Edge Function de IA (Fase 7)
@@ -176,9 +183,9 @@ en vez de placeholders:
   zona (localidad curada), categoría, presupuesto (presets) y rating mínimo. Implementado como
   modal/bottom sheet sobre la propia pantalla, no como ruta separada — la simplificación de UX
   que quedó aprobada en la Fase 0.
-- **Place Detail** — datos reales de `places` + `place_images`, tags, horario, rating y botón de
-  favorito. El mapa queda pendiente para la Fase 5; la lista/creación de reseñas para la Fase 6
-  (por ahora solo se muestra el rating/conteo ya cacheado).
+- **Place Detail** — datos reales de `places` + `place_images`, tags, horario, rating, botón de
+  favorito y mapa (Fase 5). La lista/creación de reseñas queda para la Fase 6 (por ahora solo se
+  muestra el rating/conteo ya cacheado).
 - **Favoritos** — `listFavoritePlaces` (join `favorites` → `places`) y toggle optimista vía
   `useToggleFavorite`, invalidando la caché de React Query.
 
@@ -187,6 +194,32 @@ como filtro de `Search`, porque no hay una columna de capacidad en `places` — 
 *intención* de búsqueda (para la IA de la Fase 7), no un atributo del lugar. Igual con "distancia":
 depende de la ubicación del usuario (Fase 5), así que el filtro de zona (localidad) cubre ese caso
 por ahora.
+
+## Mapas y ubicación (Fase 5)
+
+- **Cercanía en la base de datos** — `supabase/migrations/20260811120008_nearby_places.sql`
+  agrega una función `nearby_places(user_lat, user_lng, max_distance_km, result_limit)` expuesta
+  automáticamente por Supabase como RPC (`supabase.rpc('nearby_places', ...)`). PostgREST no deja
+  ordenar/filtrar por una expresión SQL arbitraria (`earth_distance`) desde la API REST normal —
+  por eso es una función y no un filtro más de `listPlaces`.
+- **Ubicación del usuario** — `src/features/location/useUserLocation.ts` pide el permiso de
+  `expo-location` solo cuando el usuario toca "Activar ubicación" en Home (no al abrir la
+  pantalla, para no sorprenderlo con un prompt de permiso apenas entra a la app).
+- **Mapa en Place Detail**: `PlaceMapPreview` — dos archivos, uno por plataforma (Metro elige
+  automáticamente):
+  - `PlaceMapPreview.tsx` (iOS/Android): `MapView` real de `react-native-maps`. iOS usa Apple
+    Maps sin costo; Android usa Google Maps y necesita `GOOGLE_MAPS_API_KEY`.
+  - `PlaceMapPreview.web.tsx`: `react-native-maps` no tiene versión web. En vez de dejar un hueco
+    vacío o hacer crashear el bundle web, se embebe OpenStreetMap (gratis, sin API key) — la app
+    web sigue siendo solo la vía rápida de desarrollo de UI (ver "Requisitos"), el mapa real vive
+    en la build nativa.
+
+**Por qué Android necesita una API key y iOS no:** decisión ya señalada en
+`docs/00-fase0-analisis.md` (riesgos técnicos) — `react-native-maps` usa el proveedor de mapas
+nativo de cada plataforma; Apple Maps no requiere key, el SDK de Google Maps en Android sí. Se
+pasa como variable de entorno de build (`GOOGLE_MAPS_API_KEY`, sin prefijo `EXPO_PUBLIC_`, ya que
+`app.config.ts` la vuelca en `AndroidManifest.xml` al hacer `expo prebuild`/EAS Build — nunca
+llega al bundle de JavaScript).
 
 ## Testing
 
@@ -199,17 +232,22 @@ npm run lint      # ESLint
 Fase 3 agrega pruebas unitarias de los esquemas de validación (login/registro) y de la capa
 `api.ts` con el cliente Supabase mockeado (credenciales inválidas, correo ya registrado,
 confirmación de correo pendiente, etc.). Fase 4 agrega pruebas de `queries.ts` (filtros de
-`listPlaces`, saneo del término de búsqueda, favoritos) con el mismo enfoque de cliente Supabase
-mockeado — sin red, sin proyecto real.
+`listPlaces`, saneo del término de búsqueda, favoritos), y Fase 5 suma `listNearbyPlaces` (llamada
+a la RPC con los parámetros correctos) y `formatDistance`/`formatCOP`/`formatPriceRange` — todo
+con el cliente Supabase mockeado, sin red ni proyecto real.
 
-Además, esta fase se verificó con un recorrido de UI contra datos reales: sin Docker disponible en
-este entorno para levantar Supabase local, se armó un servidor REST mínimo (no forma parte del
-repo) que habla el mismo protocolo que `supabase-js` usa contra el Postgres ya sembrado en la
-Fase 2, y se navegó Home → Search → Filtros → Detalle → Favoritos con Playwright para confirmar
-que los datos, el favorito y los filtros se comportan como se espera antes de dar la fase por
-cerrada.
+`supabase/tests/rls_smoke_test.sql` (Fase 2) ahora también prueba `nearby_places` contra Postgres
+real: que funcione como rol `anon` y que ningún resultado supere el radio pedido.
+
+Además, cada fase con UI se verificó con un recorrido de Playwright contra datos reales: sin
+Docker disponible en este entorno para levantar Supabase local, se armó un servidor REST mínimo
+(no forma parte del repo) que habla el mismo protocolo que `supabase-js` usa contra el Postgres ya
+sembrado en la Fase 2 — incluyendo el endpoint RPC para `nearby_places`. En Fase 5 se simuló
+además la geolocalización del navegador (`context.setGeolocation`) para confirmar que "Cerca de
+ti" pide permiso, consulta la RPC y muestra distancias reales, y que el fallback de mapa en web
+(OpenStreetMap) renderiza en vez de romper el bundle.
 
 ## Próximos pasos
 
-Fase 5 (Maps): `react-native-maps` + `expo-location` para mostrar el mapa en Place Detail, "Cerca
-de ti" en Home, y cálculo de distancia (`cube`/`earthdistance`, ya habilitado desde la Fase 2).
+Fase 6 (Reviews): crear/editar/eliminar reseñas, rating y recálculo de promedio (el trigger de
+Fase 2 ya lo mantiene cacheado en `places`).

@@ -67,3 +67,6 @@ export type Favorite = {
   place_id: string;
   created_at: string;
 };
+
+/** Resultado de la RPC `nearby_places` (Fase 5): un `Place` + distancia en metros. */
+export type PlaceWithDistance = Place & { distance_m: number };

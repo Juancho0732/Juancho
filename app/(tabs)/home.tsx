@@ -2,11 +2,12 @@ import { router } from 'expo-router';
 import { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { Card, Chip, Input, Screen, Text } from '@/components/ui';
 import { PlaceCard } from '@/components/domain';
+import { Button, Card, Chip, Input, Screen, Text } from '@/components/ui';
 import { theme } from '@/design-system/theme';
 import { useFavoriteIds, useToggleFavorite } from '@/features/favorites';
-import { useCategories, usePlaces } from '@/features/places';
+import { useUserLocation } from '@/features/location';
+import { useCategories, useNearbyPlaces, usePlaces } from '@/features/places';
 
 function EmptySection({ title, note }: { title: string; note: string }) {
   return (
@@ -17,6 +18,74 @@ function EmptySection({ title, note }: { title: string; note: string }) {
           {note}
         </Text>
       </Card>
+    </View>
+  );
+}
+
+function NearbySection() {
+  const location = useUserLocation();
+  const coords = location.status === 'granted' ? location.coords : null;
+  const { data: nearbyPlaces, isLoading } = useNearbyPlaces(coords);
+  const { data: categories } = useCategories();
+  const { data: favoriteIds } = useFavoriteIds();
+  const toggleFavorite = useToggleFavorite();
+
+  const favoriteIdSet = useMemo(() => new Set(favoriteIds ?? []), [favoriteIds]);
+  const categoryNameById = useMemo(
+    () => new Map((categories ?? []).map((category) => [category.id, category.name])),
+    [categories],
+  );
+
+  return (
+    <View style={styles.section}>
+      <Text variant="subtitle">Cerca de ti</Text>
+
+      {location.status === 'idle' || location.status === 'denied' ? (
+        <Card>
+          <View style={styles.nearbyPrompt}>
+            <Text variant="body" color="textSecondary">
+              {location.status === 'denied'
+                ? 'No se pudo acceder a tu ubicación. Revisa los permisos de la app e intenta de nuevo.'
+                : 'Activa tu ubicación para ver planes cerca de ti.'}
+            </Text>
+            <Button label="Activar ubicación" onPress={location.requestLocation} />
+          </View>
+        </Card>
+      ) : location.status === 'loading' || isLoading ? (
+        <Card>
+          <Text variant="body" color="textSecondary">
+            Buscando tu ubicación…
+          </Text>
+        </Card>
+      ) : location.status === 'error' ? (
+        <Card>
+          <Text variant="body" color="danger">
+            {location.message}
+          </Text>
+        </Card>
+      ) : nearbyPlaces && nearbyPlaces.length > 0 ? (
+        <View style={styles.placeList}>
+          {nearbyPlaces.map((place) => (
+            <PlaceCard
+              key={place.id}
+              place={place}
+              categoryName={place.category_id ? categoryNameById.get(place.category_id) : undefined}
+              distanceMeters={place.distance_m}
+              isFavorite={favoriteIdSet.has(place.id)}
+              onToggleFavorite={() =>
+                toggleFavorite.mutate({ placeId: place.id, isFavorite: favoriteIdSet.has(place.id) })
+              }
+              onPress={() => router.push({ pathname: '/place/[id]', params: { id: place.id } })}
+            />
+          ))}
+        </View>
+      ) : (
+        <Card>
+          <Text variant="body" color="textSecondary">
+            No encontramos lugares activos a menos de 15 km.
+          </Text>
+        </Card>
+      )}
     </View>
   );
 }
@@ -85,7 +154,8 @@ export default function HomeScreen() {
           )}
         </View>
 
-        <EmptySection title="Cerca de ti" note="Requiere permiso de ubicación — Fase 5." />
+        <NearbySection />
+
         <EmptySection
           title="Recomendado para ti"
           note="Recomendaciones personalizadas por IA — Fase 7/8."
@@ -109,5 +179,9 @@ const styles = StyleSheet.create({
   },
   placeList: {
     gap: theme.spacing.sm,
+  },
+  nearbyPrompt: {
+    gap: theme.spacing.sm,
+    alignItems: 'flex-start',
   },
 });

@@ -34,9 +34,13 @@ function createQueryBuilder(result: { data: unknown; error: unknown }) {
 }
 
 const mockFrom = jest.fn();
+const mockRpc = jest.fn();
 
 jest.mock('@/services/supabase/client', () => ({
-  supabase: { from: (...args: unknown[]) => mockFrom(...args) },
+  supabase: {
+    from: (...args: unknown[]) => mockFrom(...args),
+    rpc: (...args: unknown[]) => mockRpc(...args),
+  },
 }));
 
 // eslint-disable-next-line import/first -- el mock de arriba debe declararse antes de importar '../queries'
@@ -44,12 +48,14 @@ import {
   addFavorite,
   listFavoritePlaceIds,
   listFavoritePlaces,
+  listNearbyPlaces,
   listPlaces,
   removeFavorite,
 } from '../queries';
 
 beforeEach(() => {
   mockFrom.mockReset();
+  mockRpc.mockReset();
 });
 
 describe('listPlaces', () => {
@@ -161,5 +167,39 @@ describe('favorites', () => {
     const result = await listFavoritePlaces('user-1');
 
     expect(result).toEqual([{ id: 'a', name: 'A' }]);
+  });
+});
+
+describe('listNearbyPlaces', () => {
+  it('llama a la RPC nearby_places con los parámetros correctos', async () => {
+    mockRpc.mockResolvedValue({ data: [], error: null });
+
+    await listNearbyPlaces({ lat: 4.65, lng: -74.05, maxDistanceKm: 5, limit: 8 });
+
+    expect(mockRpc).toHaveBeenCalledWith('nearby_places', {
+      user_lat: 4.65,
+      user_lng: -74.05,
+      max_distance_km: 5,
+      result_limit: 8,
+    });
+  });
+
+  it('usa 15 km y 10 resultados por defecto', async () => {
+    mockRpc.mockResolvedValue({ data: [], error: null });
+
+    await listNearbyPlaces({ lat: 4.65, lng: -74.05 });
+
+    expect(mockRpc).toHaveBeenCalledWith('nearby_places', {
+      user_lat: 4.65,
+      user_lng: -74.05,
+      max_distance_km: 15,
+      result_limit: 10,
+    });
+  });
+
+  it('lanza el error de Supabase en vez de devolver datos parciales', async () => {
+    mockRpc.mockResolvedValue({ data: null, error: new Error('boom') });
+
+    await expect(listNearbyPlaces({ lat: 0, lng: 0 })).rejects.toThrow('boom');
   });
 });

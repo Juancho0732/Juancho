@@ -1,4 +1,4 @@
-import type { Category, Place, PlaceImage, Profile, Review } from '@/types/database';
+import type { Category, Place, PlaceImage, PlaceWithDistance, Profile, Review } from '@/types/database';
 
 import { supabase } from './client';
 
@@ -61,6 +61,25 @@ export async function listPlaces(filters: ListPlacesFilters = {}): Promise<Place
   query = query.order('rating_avg', { ascending: false }).limit(filters.limit ?? 30);
 
   const { data, error } = await query;
+  if (error) throw error;
+  return data;
+}
+
+export type NearbyPlacesParams = {
+  lat: number;
+  lng: number;
+  maxDistanceKm?: number;
+  limit?: number;
+};
+
+/** Lugares activos ordenados por cercanía real (RPC `nearby_places`, Fase 5). */
+export async function listNearbyPlaces(params: NearbyPlacesParams): Promise<PlaceWithDistance[]> {
+  const { data, error } = await supabase.rpc('nearby_places', {
+    user_lat: params.lat,
+    user_lng: params.lng,
+    max_distance_km: params.maxDistanceKm ?? 15,
+    result_limit: params.limit ?? 10,
+  });
   if (error) throw error;
   return data;
 }

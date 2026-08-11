@@ -3,17 +3,26 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Card, Text } from '@/components/ui';
 import { theme } from '@/design-system/theme';
 import type { Place } from '@/types/database';
-import { formatPriceRange } from '@/utils/format';
+import { formatDistance, formatPriceRange } from '@/utils/format';
 
 type Props = {
   place: Place;
   categoryName?: string;
+  /** En metros, si se conoce la ubicación del usuario (Fase 5). */
+  distanceMeters?: number;
   isFavorite: boolean;
   onToggleFavorite: () => void;
   onPress: () => void;
 };
 
-export function PlaceCard({ place, categoryName, isFavorite, onToggleFavorite, onPress }: Props) {
+export function PlaceCard({
+  place,
+  categoryName,
+  distanceMeters,
+  isFavorite,
+  onToggleFavorite,
+  onPress,
+}: Props) {
   return (
     <Pressable onPress={onPress} accessibilityRole="button" testID={`place-card-${place.id}`}>
       <Card style={styles.card}>
@@ -41,7 +50,13 @@ export function PlaceCard({ place, categoryName, isFavorite, onToggleFavorite, o
           </View>
 
           <Text variant="caption" color="textSecondary" numberOfLines={1}>
-            {[place.locality, categoryName].filter(Boolean).join(' · ')}
+            {[
+              distanceMeters !== undefined ? formatDistance(distanceMeters) : null,
+              place.locality,
+              categoryName,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
           </Text>
 
           <View style={styles.metaRow}>

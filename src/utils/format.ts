@@ -15,3 +15,9 @@ export function formatPriceRange(min: number | null, max: number | null): string
   }
   return formatCOP(min ?? max ?? 0);
 }
+
+/** `distance_m` viene de la RPC `nearby_places` (earthdistance, en metros). */
+export function formatDistance(meters: number): string {
+  if (meters < 1000) return `${Math.round(meters)} m`;
+  return `${(meters / 1000).toFixed(1)} km`;
+}

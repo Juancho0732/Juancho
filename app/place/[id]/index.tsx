@@ -2,6 +2,7 @@ import { Image } from 'expo-image';
 import { Link, useLocalSearchParams } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { PlaceMapPreview } from '@/components/domain';
 import { Button, Card, Chip, Screen, Text } from '@/components/ui';
 import { theme } from '@/design-system/theme';
 import { useFavoriteIds, useToggleFavorite } from '@/features/favorites';
@@ -115,19 +116,15 @@ export default function PlaceDetailScreen() {
           </View>
         ) : null}
 
-        {place.address ? (
-          <View style={styles.section}>
-            <Text variant="subtitle">Ubicación</Text>
+        <View style={styles.section}>
+          <Text variant="subtitle">Ubicación</Text>
+          {place.address ? (
             <Text variant="body" color="textSecondary">
               {place.address}
             </Text>
-            <Card>
-              <Text variant="caption" color="textSecondary">
-                Mapa disponible en la Fase 5.
-              </Text>
-            </Card>
-          </View>
-        ) : null}
+          ) : null}
+          <PlaceMapPreview lat={place.lat} lng={place.lng} title={place.name} />
+        </View>
 
         {place.schedule ? (
           <View style={styles.section}>
