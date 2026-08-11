@@ -7,7 +7,7 @@ propios (no inventados).
 
 El análisis completo de arquitectura, modelo de datos, flujo de IA, riesgos y decisiones está
 en [`docs/00-fase0-analisis.md`](docs/00-fase0-analisis.md). Este README cubre lo ya
-implementado (Fases 1 a 3).
+implementado (Fases 1 a 4).
 
 ## Estado del proyecto
 
@@ -19,7 +19,9 @@ implementado (Fases 1 a 3).
   tipada. Ver detalle abajo.
 - ✅ **Fase 3** — Authentication: registro, login, logout, sesión persistente y protección de
   rutas. Ver detalle abajo.
-- ⏳ Fases 4–8 — pendientes.
+- ✅ **Fase 4** — Places: lista, detalle, categorías, búsqueda con filtros y favoritos, con
+  datos MOCK reales. Ver detalle abajo.
+- ⏳ Fases 5–8 — pendientes.
 
 ## Stack
 
@@ -76,7 +78,9 @@ src/
   components/domain/ # componentes específicos del dominio (se van llenando por fase)
   features/
     auth/            # api (signUp/signIn/signOut), store de sesión, validación, protección de rutas
-    places/, ai-search/, reviews/, favorites/ # se llenan en fases siguientes
+    places/          # hooks de categorías/lugares, FiltersSheet, localidades curadas
+    favorites/       # hooks de favoritos (listar, alternar)
+    ai-search/, reviews/ # se llenan en fases siguientes
   services/         # supabase client + queries tipadas, query client, ranking
   hooks/, types/, utils/
 supabase/
@@ -159,6 +163,31 @@ automáticamente su fila en `profiles`. Si el proyecto de Supabase tiene activad
 por correo, el registro no deja sesión iniciada de inmediato — la pantalla lo detecta y muestra
 "revisa tu correo" en vez de navegar.
 
+## Places y favoritos (Fase 4)
+
+Home, Search, Place Detail y Favorites ya consumen datos reales de Supabase (o del seed MOCK)
+en vez de placeholders:
+
+- **Home** — categorías (chips, tocar una navega a Search con ese filtro) y "Lugares populares"
+  (`usePlaces({ limit: 10 })`, ordenado por `rating_avg`). "Cerca de ti" y "Recomendado para ti"
+  siguen como placeholder: requieren geolocalización (Fase 5) y el pipeline de IA/personalización
+  (Fase 7/8) respectivamente — mezclarlos con datos falsos habría sido peor que dejarlos vacíos.
+- **Search** — búsqueda por texto (debounced, `name`/`description` con `ilike`) + `FiltersSheet`:
+  zona (localidad curada), categoría, presupuesto (presets) y rating mínimo. Implementado como
+  modal/bottom sheet sobre la propia pantalla, no como ruta separada — la simplificación de UX
+  que quedó aprobada en la Fase 0.
+- **Place Detail** — datos reales de `places` + `place_images`, tags, horario, rating y botón de
+  favorito. El mapa queda pendiente para la Fase 5; la lista/creación de reseñas para la Fase 6
+  (por ahora solo se muestra el rating/conteo ya cacheado).
+- **Favoritos** — `listFavoritePlaces` (join `favorites` → `places`) y toggle optimista vía
+  `useToggleFavorite`, invalidando la caché de React Query.
+
+**Simplificación deliberada, no en la lista original de filtros:** "número de personas" no quedó
+como filtro de `Search`, porque no hay una columna de capacidad en `places` — es un parámetro de
+*intención* de búsqueda (para la IA de la Fase 7), no un atributo del lugar. Igual con "distancia":
+depende de la ubicación del usuario (Fase 5), así que el filtro de zona (localidad) cubre ese caso
+por ahora.
+
 ## Testing
 
 ```bash
@@ -169,9 +198,18 @@ npm run lint      # ESLint
 
 Fase 3 agrega pruebas unitarias de los esquemas de validación (login/registro) y de la capa
 `api.ts` con el cliente Supabase mockeado (credenciales inválidas, correo ya registrado,
-confirmación de correo pendiente, etc.) — no dependen de red ni de un proyecto Supabase real.
+confirmación de correo pendiente, etc.). Fase 4 agrega pruebas de `queries.ts` (filtros de
+`listPlaces`, saneo del término de búsqueda, favoritos) con el mismo enfoque de cliente Supabase
+mockeado — sin red, sin proyecto real.
+
+Además, esta fase se verificó con un recorrido de UI contra datos reales: sin Docker disponible en
+este entorno para levantar Supabase local, se armó un servidor REST mínimo (no forma parte del
+repo) que habla el mismo protocolo que `supabase-js` usa contra el Postgres ya sembrado en la
+Fase 2, y se navegó Home → Search → Filtros → Detalle → Favoritos con Playwright para confirmar
+que los datos, el favorito y los filtros se comportan como se espera antes de dar la fase por
+cerrada.
 
 ## Próximos pasos
 
-Fase 4 (Places): lista de lugares, detalle, categorías, búsqueda/filtros y favoritos, consumiendo
-`src/services/supabase/queries.ts` (Fase 2) sobre rutas ya protegidas por sesión (Fase 3).
+Fase 5 (Maps): `react-native-maps` + `expo-location` para mostrar el mapa en Place Detail, "Cerca
+de ti" en Home, y cálculo de distancia (`cube`/`earthdistance`, ya habilitado desde la Fase 2).

@@ -28,6 +28,7 @@ export type ListPlacesFilters = {
   locality?: string;
   categoryId?: string;
   maxPrice?: number;
+  minRating?: number;
   search?: string;
   limit?: number;
 };
@@ -43,6 +44,9 @@ export async function listPlaces(filters: ListPlacesFilters = {}): Promise<Place
   }
   if (filters.maxPrice !== undefined) {
     query = query.lte('price_min', filters.maxPrice);
+  }
+  if (filters.minRating !== undefined) {
+    query = query.gte('rating_avg', filters.minRating);
   }
   if (filters.search) {
     // Los operadores .or()/.ilike() de PostgREST usan `,()` como sintaxis de
@@ -91,6 +95,20 @@ export async function listFavoritePlaceIds(userId: string): Promise<string[]> {
   const { data, error } = await supabase.from('favorites').select('place_id').eq('user_id', userId);
   if (error) throw error;
   return data.map((row) => row.place_id);
+}
+
+/** Lugares favoritos completos (para la pantalla de Favoritos), más recientes primero. */
+export async function listFavoritePlaces(userId: string): Promise<Place[]> {
+  const { data, error } = await supabase
+    .from('favorites')
+    .select('created_at, places(*)')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+
+  return (data as unknown as { places: Place | null }[])
+    .map((row) => row.places)
+    .filter((place): place is Place => place !== null);
 }
 
 export async function addFavorite(userId: string, placeId: string): Promise<void> {
