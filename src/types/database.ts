@@ -39,6 +39,9 @@ export type Place = {
   review_count: number;
   status: PlaceStatus;
   is_mock: boolean;
+  /** Trazabilidad de datos reales (is_mock = false); null en lugares MOCK. */
+  source: string | null;
+  last_verified_at: string | null;
   created_at: string;
 };
 

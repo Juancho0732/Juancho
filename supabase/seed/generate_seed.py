@@ -122,11 +122,64 @@ def jitter(base: float, spread: float = 0.012) -> float:
     return base + random.uniform(-spread, spread)
 
 
+SEED_CONFIRM_PHRASE = "si-quiero-cargar-datos-ficticios"
+
+
+def seed_guard_block() -> str:
+    """Salvaguarda (auditoría de beta-readiness, Prioridad 1/7): este archivo
+    carga datos FICTICIOS de desarrollo y nunca debe correr contra un
+    proyecto con datos reales. Se frena solo, con un mensaje explícito, salvo
+    que quien lo ejecute:
+      1) haya puesto explícitamente la frase de confirmación en la misma
+         sesión/conexión (no es algo que se corra "sin querer"), y
+      2) la base todavía no tenga ningún lugar real (is_mock = false) -- si
+         ya lo tiene, sembrar MOCK encima siempre se rechaza, confirmación o no.
+    """
+    return "\n".join(
+        [
+            "-- ============================================================================",
+            "-- SALVAGUARDA: este archivo carga datos FICTICIOS (MOCK) de desarrollo.",
+            "-- NUNCA debe correr contra un proyecto con usuarios o datos reales.",
+            "--",
+            "-- Para confirmar que sabés lo que estás haciendo, corré esta línea ANTES",
+            "-- de este archivo, en la MISMA sesión/conexión (psql, Supabase SQL Editor, etc.):",
+            "--",
+            f"--   SET myapp.confirm_mock_seed = '{SEED_CONFIRM_PHRASE}';",
+            "--",
+            "-- Sin esa confirmación explícita, o si la base ya tiene algún lugar real",
+            "-- (is_mock = false), este script se detiene sin cambiar nada.",
+            "-- ============================================================================",
+            "do $$",
+            "begin",
+            f"  if coalesce(current_setting('myapp.confirm_mock_seed', true), '') <> '{SEED_CONFIRM_PHRASE}' then",
+            "    raise exception 'Seed MOCK abortado: falta confirmación explícita. Corré antes: "
+            f"SET myapp.confirm_mock_seed = ''{SEED_CONFIRM_PHRASE}''; -- "
+            "Este seed es SOLO para desarrollo local, nunca para producción.';",
+            "  end if;",
+            "",
+            "  if exists (select 1 from public.places where is_mock = false) then",
+            "    raise exception 'Seed MOCK abortado: ya existen lugares reales (is_mock = false) "
+            "en esta base. No se puede sembrar datos ficticios sobre datos reales.';",
+            "  end if;",
+            "end",
+            "$$;",
+        ]
+    )
+
+
 def main() -> None:
     lines: list[str] = []
     lines.append("-- Datos MOCK/DEMO para desarrollo local. Generado por")
     lines.append("-- supabase/seed/generate_seed.py -- no ejecutar contra producción.")
     lines.append("-- Ningún nombre, reseña o precio corresponde a un lugar real.")
+    lines.append("")
+    # Todo el archivo corre en una sola transacción: si la salvaguarda de
+    # arriba lanza una excepción, nada de lo que sigue se llega a confirmar,
+    # incluso si quien lo ejecuta no usa `psql -v ON_ERROR_STOP=1` (que por
+    # defecto sigue corriendo statements después de un error).
+    lines.append("begin;")
+    lines.append("")
+    lines.append(seed_guard_block())
     lines.append("")
 
     # --- Categorías ---
@@ -240,6 +293,8 @@ def main() -> None:
     lines.append(") as r(user_id, rating, comment, amount_paid, occasion)")
     lines.append("join auth.users u on u.id = r.user_id")
     lines.append("on conflict (place_id, user_id) do nothing;")
+    lines.append("")
+    lines.append("commit;")
     lines.append("")
 
     print("\n".join(lines))

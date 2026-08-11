@@ -129,4 +129,22 @@ set request.jwt.claim.sub = '11111111-1111-1111-1111-111111111106';
 select count(*) as total_recomendados_sin_senal from public.personalized_places(6);
 reset role;
 
+\echo '--- 18) places_real_data_traceable (Prioridad 1): un lugar real sin source/last_verified_at debe fallar ---'
+set role service_role;
+insert into public.places (name, address, locality, lat, lng, is_mock)
+values ('Sin trazabilidad (debe fallar)', 'Calle X', 'Chapinero', 4.65, -74.05, false);
+reset role;
+
+\echo '--- 19) places_real_data_traceable: con source y last_verified_at sí se puede insertar un lugar real ---'
+set role service_role;
+insert into public.places (name, address, locality, lat, lng, is_mock, source, last_verified_at)
+values (
+  'Lugar real de prueba', 'Calle Y', 'Chapinero', 4.65, -74.05, false,
+  'https://maps.google.com/?cid=prueba', now()
+);
+select name, is_mock, source is not null as tiene_source
+from public.places where name = 'Lugar real de prueba';
+delete from public.places where name = 'Lugar real de prueba';
+reset role;
+
 \echo '--- listo ---'

@@ -1,0 +1,2 @@
+name,category,address,locality,lat,lng,price_min,price_max,schedule,description,images,tags,source,last_verified_at
+EJEMPLO — REEMPLAZAR — Nombre real del lugar,Restaurantes,EJEMPLO — REEMPLAZAR — Dirección real y verificable,Chapinero,4.6486,-74.0628,25000,60000,lun_vie=12:00-22:00;sab_dom=10:00-23:00,EJEMPLO — REEMPLAZAR — Descripción real de qué ofrece el lugar (mínimo 20 caracteres),https://ejemplo.com/foto1.jpg|https://ejemplo.com/foto2.jpg,pet_friendly|outdoor,https://maps.google.com/?cid=EJEMPLO-reemplazar-con-link-real,2026-03-01

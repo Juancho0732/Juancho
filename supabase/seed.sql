@@ -2,6 +2,32 @@
 -- supabase/seed/generate_seed.py -- no ejecutar contra producción.
 -- Ningún nombre, reseña o precio corresponde a un lugar real.
 
+begin;
+
+-- ============================================================================
+-- SALVAGUARDA: este archivo carga datos FICTICIOS (MOCK) de desarrollo.
+-- NUNCA debe correr contra un proyecto con usuarios o datos reales.
+--
+-- Para confirmar que sabés lo que estás haciendo, corré esta línea ANTES
+-- de este archivo, en la MISMA sesión/conexión (psql, Supabase SQL Editor, etc.):
+--
+--   SET myapp.confirm_mock_seed = 'si-quiero-cargar-datos-ficticios';
+--
+-- Sin esa confirmación explícita, o si la base ya tiene algún lugar real
+-- (is_mock = false), este script se detiene sin cambiar nada.
+-- ============================================================================
+do $$
+begin
+  if coalesce(current_setting('myapp.confirm_mock_seed', true), '') <> 'si-quiero-cargar-datos-ficticios' then
+    raise exception 'Seed MOCK abortado: falta confirmación explícita. Corré antes: SET myapp.confirm_mock_seed = ''si-quiero-cargar-datos-ficticios''; -- Este seed es SOLO para desarrollo local, nunca para producción.';
+  end if;
+
+  if exists (select 1 from public.places where is_mock = false) then
+    raise exception 'Seed MOCK abortado: ya existen lugares reales (is_mock = false) en esta base. No se puede sembrar datos ficticios sobre datos reales.';
+  end if;
+end
+$$;
+
 insert into public.categories (name, slug) values
   ('Restaurantes', 'restaurantes'),
   ('Bares y Rooftops', 'bares-rooftops'),
@@ -126,4 +152,6 @@ cross join lateral (
 ) as r(user_id, rating, comment, amount_paid, occasion)
 join auth.users u on u.id = r.user_id
 on conflict (place_id, user_id) do nothing;
+
+commit;
 

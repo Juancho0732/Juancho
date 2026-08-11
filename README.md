@@ -31,6 +31,11 @@ implementado (Fases 1 a 8).
 - ✅ **Fase 8** — Personalización: sección "Recomendado para ti" en Home basada en las señales
   reales del propio usuario (favoritos y reseñas bien calificadas), sin IA de por medio. Ver
   detalle abajo.
+- 🔄 **Auditoría de beta-readiness** — antes de abrir el MVP a usuarios reales se hizo una revisión
+  de seguridad/RLS/IA/errores/rendimiento/UX y se está remediando por prioridades. Prioridad 1
+  (datos reales) ya está lista — ver "Datos reales" y "Salvaguarda del seed MOCK" abajo. El resto
+  de prioridades (manejo de errores visible, seguridad de la IA, recuperación de contraseña, etc.)
+  quedan pendientes.
 
 ## Stack
 
@@ -100,8 +105,10 @@ src/
 app.config.ts       # config de Expo (no app.json) — lee GOOGLE_MAPS_API_KEY del entorno
 supabase/
   migrations/       # SQL versionado — esquema, RLS, triggers, RPCs
-  seed.sql            # datos MOCK/DEMO (generado por seed/generate_seed.py)
+  seed.sql            # datos MOCK/DEMO (generado por seed/generate_seed.py), protegido contra correr sin querer
   seed/generate_seed.py # script que produce seed.sql (reproducible, seed fijo)
+  seed/import_real_places.py # valida CSV/JSON de lugares reales y genera SQL para revisión humana
+  seed/real_places.example.csv # formato esperado del CSV (sin datos reales)
   functions/ai-search/ # Edge Function de IA: intención, heurística de respaldo, ranking,
                         # proveedor de IA (Anthropic), orquestación (index.ts)
   tests/            # validación local de RLS sin depender de Supabase CLI/Docker
@@ -139,11 +146,73 @@ Decisiones tomadas al implementar (afinan el análisis de Fase 0 con casos concr
    ```
    o pegando el contenido de cada archivo de `supabase/migrations/` (en orden de nombre) en el
    SQL Editor.
-4. Cargar los datos MOCK ejecutando `supabase/seed.sql` de la misma forma. **No correr contra un
-   proyecto que ya tenga datos reales** — inserta usuarios de desarrollo ficticios en
-   `auth.users`.
+4. Cargar los datos MOCK ejecutando `supabase/seed.sql` de la misma forma — **requiere confirmar
+   explícitamente antes** (ver "Salvaguarda del seed MOCK" abajo); sin eso, el script se aborta
+   solo y no cambia nada.
 5. Para regenerar el seed (por ejemplo, al escalar de 100 a 500 lugares — ver
    `docs/00-fase0-analisis.md` sección 6): `python3 supabase/seed/generate_seed.py > supabase/seed.sql`.
+
+### Salvaguarda del seed MOCK (auditoría de beta-readiness, Prioridad 1)
+
+`supabase/seed.sql` carga datos **ficticios** — nunca debe correr contra un proyecto con usuarios
+o datos reales. Antes solo había un aviso en este README; ahora el archivo se protege solo, en dos
+capas:
+
+1. **Confirmación explícita obligatoria.** El archivo se aborta (sin cambiar nada) salvo que, en
+   la misma sesión/conexión, antes de correrlo, se ejecute:
+   ```sql
+   SET myapp.confirm_mock_seed = 'si-quiero-cargar-datos-ficticios';
+   ```
+2. **Bloqueo si ya hay datos reales.** Si la base ya tiene algún lugar con `is_mock = false`, el
+   seed se rechaza igual, aunque se haya confirmado — no se puede sembrar MOCK encima de datos
+   reales.
+
+Todo el archivo corre dentro de una única transacción (`begin;` ... `commit;`), así que si la
+salvaguarda lanza una excepción, nada se llega a insertar — ni siquiera corriendo `psql` sin
+`-v ON_ERROR_STOP=1` (que por defecto sigue ejecutando statements después de un error; sin la
+transacción explícita, un error a mitad de archivo dejaría el seed a medio aplicar).
+
+### Datos reales (auditoría de beta-readiness, Prioridad 1)
+
+`places` tiene `is_mock` (default `true`, así siempre queda claro qué es ficticio) y dos columnas
+de trazabilidad para cuando `is_mock = false`: `source` (de dónde salió el dato) y
+`last_verified_at` (cuándo se confirmó que sigue siendo correcto). Un `CHECK` en la base
+(`places_real_data_traceable`) impide insertar un lugar real sin ambos datos — no depende de que
+la app o el importador se acuerden de validarlo.
+
+**`supabase/seed/import_real_places.py`** valida un CSV o JSON de lugares reales (investigados a
+mano — esta herramienta no inventa ni verifica que un lugar exista, solo valida formato y
+trazabilidad) y, si hay filas válidas, genera un `.sql` de solo-INSERT para revisión humana. Nunca
+se conecta a ninguna base de datos ni escribe nada salvo que se le pida explícitamente con
+`--output`:
+
+```bash
+# Solo valida y muestra el reporte (dry run, no escribe nada)
+python3 supabase/seed/import_real_places.py mis_lugares.csv
+
+# Valida y además genera el SQL de las filas válidas, para revisar antes de aplicar
+python3 supabase/seed/import_real_places.py mis_lugares.csv --output supabase/seed/real_places_import.sql
+
+# Después de revisar el .sql a mano:
+psql "$DATABASE_URL" -f supabase/seed/real_places_import.sql
+```
+
+Ver `supabase/seed/real_places.example.csv` para el formato exacto de columnas. Valida, entre
+otras cosas: categoría contra las ya existentes (no crea categorías nuevas), coordenadas dentro de
+un rango razonable de Bogotá, precios (`min ≤ max`, no negativos), horario, longitud de
+descripción, URLs de imágenes si hay, y — como pediste explícitamente — `source` no puede ser un
+término genérico como "internet" o "google" (tiene que ser una URL o describir la fuente
+específica), y `last_verified_at` es obligatoria y **nunca se completa automáticamente**: si falta,
+la fila se rechaza en vez de asumir que se verificó "hoy". Localidades fuera de las 6 curadas hoy
+(`BOGOTA_LOCALITIES`) no bloquean la importación, solo generan una advertencia (el lugar se
+importa igual, pero no aparece en el filtro de zona de Search hasta agregar la localidad a
+`src/features/places/constants.ts`).
+
+Pruebas: `python3 -m unittest supabase.seed.test_import_real_places -v` (29 casos: validación de
+`source`/`last_verified_at`/categoría/coordenadas/precios/descripción/imágenes, y casos
+específicos contra intentar "colar" un lugar sin verificar como si lo estuviera). La base de datos
+suma dos escenarios en `supabase/tests/rls_smoke_test.sql` (18-19) confirmando el `CHECK` contra
+Postgres real.
 
 ### Validar el esquema sin un proyecto Supabase (local, sin Docker)
 
