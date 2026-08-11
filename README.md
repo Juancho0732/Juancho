@@ -7,7 +7,7 @@ propios (no inventados).
 
 El análisis completo de arquitectura, modelo de datos, flujo de IA, riesgos y decisiones está
 en [`docs/00-fase0-analisis.md`](docs/00-fase0-analisis.md). Este README cubre lo ya
-implementado (Fases 1 a 7).
+implementado (Fases 1 a 8).
 
 ## Estado del proyecto
 
@@ -28,7 +28,9 @@ implementado (Fases 1 a 7).
 - ✅ **Fase 7** — AI Search: input en lenguaje natural, Edge Function `ai-search` que interpreta
   la intención, la valida, consulta Supabase y rankea determinísticamente, con respaldo heurístico
   si la IA falla. Ver detalle abajo.
-- ⏳ Fase 8 — pendiente.
+- ✅ **Fase 8** — Personalización: sección "Recomendado para ti" en Home basada en las señales
+  reales del propio usuario (favoritos y reseñas bien calificadas), sin IA de por medio. Ver
+  detalle abajo.
 
 ## Stack
 
@@ -88,7 +90,7 @@ src/
   components/domain/ # componentes específicos del dominio (se van llenando por fase)
   features/
     auth/            # api (signUp/signIn/signOut), store de sesión, validación, protección de rutas
-    places/          # hooks de categorías/lugares, FiltersSheet, localidades curadas
+    places/          # hooks de categorías/lugares/personalización, FiltersSheet, localidades curadas
     favorites/       # hooks de favoritos (listar, alternar)
     location/        # useUserLocation (expo-location, permiso bajo demanda)
     reviews/         # validación, mutations (upsert/delete), ReviewFormSheet
@@ -334,6 +336,50 @@ una API key de Anthropic real:
   en un minuto, las siguientes devuelven 429 en vez de seguir gastando cupo, y que cada búsqueda
   válida (incluida la que pide aclaración) deja su fila en `ai_search_logs`.
 
+## Personalización (Fase 8)
+
+"Recomendado para ti" en Home: una sección más, con las mismas reglas que el resto del proyecto
+(Regla 10) — nada de IA ni de modelos de recomendación, es una consulta SQL determinística sobre
+señales reales del propio usuario.
+
+- **`personalized_places(result_limit)`** (`supabase/migrations/20260811120009_personalized_places.sql`)
+  — función RPC (mismo mecanismo que `nearby_places` en Fase 5: PostgREST no deja construir este
+  tipo de score por columnas relacionadas desde la API REST normal). Toma dos señales del usuario
+  que ya llama a la función (vía `auth.uid()`, **sin** `SECURITY DEFINER` — sigue aplicando la RLS
+  normal de `favorites`/`reviews`, un usuario nunca puede ver ni usar las señales de otro):
+  - Lugares que marcó como favoritos.
+  - Lugares que calificó con 4 o 5 estrellas (le gustaron aunque no los haya guardado).
+
+  Con eso arma qué categorías y qué localidades le gustan (contando cuántas veces aparecen) y
+  ordena el resto de lugares activos —excluyendo los que ya le gustaron— por: coincidencia de
+  categoría (pesa el doble que la localidad, es más probable que a alguien le guste el mismo tipo
+  de plan en otra zona que un plan distinto en la misma zona) + coincidencia de localidad, y como
+  desempate, rating y número de reseñas. Documentado línea por línea en la migración.
+- **`usePersonalizedPlaces(hasSignal)`** (`src/features/places/`) — solo se habilita si
+  `hasSignal` es `true`. La función SQL en sí no necesita ningún favorito para funcionar (sin
+  señales, simplemente cae a ordenar por rating, igual que "Lugares populares") pero mostrar la
+  sección en ese caso sería fingir una personalización que no existe — así que Home solo la pide y
+  la muestra cuando el usuario ya tiene al menos un favorito.
+
+**Simplificación deliberada:** el gating de "¿hay señal?" en Home usa solo la cantidad de
+favoritos (ya se consulta ahí para los corazones de cada tarjeta), no reseñas ≥4★ — aunque la RPC
+sí las use para rankear una vez que ya se decidió mostrar la sección. Evita una query adicional
+solo para decidir si mostrar el título; si más adelante alguien calificara lugares sin nunca
+marcar un favorito, seguiría sin ver la sección hasta su primer favorito. Aceptable para el MVP,
+fácil de ajustar si se vuelve un problema real.
+
+**Verificación:** extendiendo el mismo servidor REST de verificación (Fases 2-7) para reenviar
+`personalized_places` como cualquier otra RPC, con un ajuste puntual: como el shim conecta a
+Postgres como superusuario (bypassa RLS) y no hay GoTrue real fijando el JWT, `auth.uid()` sería
+siempre `NULL` ahí dentro. Se resolvió tomando el token del header `Authorization` tal cual y
+fijándolo como `request.jwt.claim.sub` en la conexión antes de llamar a la función — con la misma
+sesión falsa de verificación que usan todas las fases. Con eso, la prueba en el navegador (usuaria
+Laura, con un favorito real de "Restaurantes" en Zona Rosa) mostró los 6 lugares recomendados
+siendo todos de la categoría "Restaurantes", con el favorito ya guardado correctamente excluido de
+la lista. `supabase/tests/rls_smoke_test.sql` suma dos pruebas contra Postgres real: que un
+usuario nunca vuelva a ver su propio favorito entre sus recomendaciones, y que un usuario sin
+ninguna señal (sin favoritos ni reseñas) igual reciba resultados sin que la función falle.
+
 ## Testing
 
 ```bash
@@ -363,6 +409,14 @@ actualiza en pantalla en cada paso y que el diálogo de confirmación de borrado
 
 ## Próximos pasos
 
-Fase 8 (Personalización): usar el historial en `ai_search_logs` y los favoritos/reseñas del
-usuario para afinar resultados futuros, sin que eso reintroduzca a la IA como fuente de datos
-(sigue siendo Postgres + ranking determinístico, ahora con señales adicionales por usuario).
+Con las Fases 0 a 8 completas, el MVP descrito en `docs/00-fase0-analisis.md` está implementado
+de punta a punta (foundation, datos, auth, lugares/favoritos, mapas, reseñas, búsqueda por IA y
+personalización). Ideas para después, ninguna bloqueante:
+
+- Incorporar `ai_search_logs` (localidades/ocasiones que el usuario ya buscó) como tercera señal
+  de `personalized_places`, además de favoritos y reseñas.
+- Build nativo real (EAS Build) para probar el mapa de `react-native-maps` en un dispositivo/
+  simulador, más allá del fallback web con OpenStreetMap.
+- Sustituir el proyecto Supabase real por el hosteado (hoy todo se verificó contra el Postgres
+  local del sandbox, ver "Testing") y correr `supabase secrets set` con una `AI_API_KEY` real para
+  probar el camino de IA completo (no solo el heurístico) en un entorno con Deno disponible.

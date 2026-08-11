@@ -7,7 +7,48 @@ import { Button, Card, Chip, Input, Screen, Text } from '@/components/ui';
 import { theme } from '@/design-system/theme';
 import { useFavoriteIds, useToggleFavorite } from '@/features/favorites';
 import { useUserLocation } from '@/features/location';
-import { useCategories, useNearbyPlaces, usePlaces } from '@/features/places';
+import { useCategories, useNearbyPlaces, usePersonalizedPlaces, usePlaces } from '@/features/places';
+
+function PersonalizedSection() {
+  const { data: favoriteIds } = useFavoriteIds();
+  const hasSignal = (favoriteIds?.length ?? 0) > 0;
+  const { data: personalizedPlaces, isLoading } = usePersonalizedPlaces(hasSignal);
+  const { data: categories } = useCategories();
+  const toggleFavorite = useToggleFavorite();
+
+  const favoriteIdSet = useMemo(() => new Set(favoriteIds ?? []), [favoriteIds]);
+  const categoryNameById = useMemo(
+    () => new Map((categories ?? []).map((category) => [category.id, category.name])),
+    [categories],
+  );
+
+  // Sin favoritos todavía no hay señal real que personalizar: la RPC caería
+  // a ordenar por rating, igual que "Lugares populares" — mostrarla ahí
+  // sería fingir personalización donde no la hay.
+  if (!hasSignal || isLoading || !personalizedPlaces || personalizedPlaces.length === 0) {
+    return null;
+  }
+
+  return (
+    <View style={styles.section}>
+      <Text variant="subtitle">Recomendado para ti</Text>
+      <View style={styles.placeList}>
+        {personalizedPlaces.map((place) => (
+          <PlaceCard
+            key={place.id}
+            place={place}
+            categoryName={place.category_id ? categoryNameById.get(place.category_id) : undefined}
+            isFavorite={favoriteIdSet.has(place.id)}
+            onToggleFavorite={() =>
+              toggleFavorite.mutate({ placeId: place.id, isFavorite: favoriteIdSet.has(place.id) })
+            }
+            onPress={() => router.push({ pathname: '/place/[id]', params: { id: place.id } })}
+          />
+        ))}
+      </View>
+    </View>
+  );
+}
 
 function NearbySection() {
   const location = useUserLocation();
@@ -127,6 +168,8 @@ export default function HomeScreen() {
             </View>
           </ScrollView>
         </View>
+
+        <PersonalizedSection />
 
         <View style={styles.section}>
           <Text variant="subtitle">Lugares populares</Text>

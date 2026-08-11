@@ -50,6 +50,7 @@ import {
   listFavoritePlaceIds,
   listFavoritePlaces,
   listNearbyPlaces,
+  listPersonalizedPlaces,
   listPlaces,
   listReviewsForPlace,
   removeFavorite,
@@ -204,6 +205,30 @@ describe('listNearbyPlaces', () => {
     mockRpc.mockResolvedValue({ data: null, error: new Error('boom') });
 
     await expect(listNearbyPlaces({ lat: 0, lng: 0 })).rejects.toThrow('boom');
+  });
+});
+
+describe('listPersonalizedPlaces', () => {
+  it('llama a la RPC personalized_places con el límite pedido', async () => {
+    mockRpc.mockResolvedValue({ data: [], error: null });
+
+    await listPersonalizedPlaces(4);
+
+    expect(mockRpc).toHaveBeenCalledWith('personalized_places', { result_limit: 4 });
+  });
+
+  it('usa 6 resultados por defecto', async () => {
+    mockRpc.mockResolvedValue({ data: [], error: null });
+
+    await listPersonalizedPlaces();
+
+    expect(mockRpc).toHaveBeenCalledWith('personalized_places', { result_limit: 6 });
+  });
+
+  it('lanza el error de Supabase en vez de devolver datos parciales', async () => {
+    mockRpc.mockResolvedValue({ data: null, error: new Error('boom') });
+
+    await expect(listPersonalizedPlaces()).rejects.toThrow('boom');
   });
 });
 

@@ -92,6 +92,13 @@ export async function listNearbyPlaces(params: NearbyPlacesParams): Promise<Plac
   return data;
 }
 
+/** Lugares personalizados por las señales del propio usuario (RPC `personalized_places`, Fase 8). */
+export async function listPersonalizedPlaces(limit = 6): Promise<Place[]> {
+  const { data, error } = await supabase.rpc('personalized_places', { result_limit: limit });
+  if (error) throw error;
+  return data;
+}
+
 export async function getPlaceById(id: string): Promise<Place | null> {
   const { data, error } = await supabase.from('places').select('*').eq('id', id).maybeSingle();
   if (error) throw error;

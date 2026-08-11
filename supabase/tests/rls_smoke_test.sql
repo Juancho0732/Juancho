@@ -112,4 +112,21 @@ from public.nearby_places(4.6486, -74.0628, 5, 1000)
 where distance_m > 5000;
 reset role;
 
+\echo '--- 16) RPC personalized_places (Fase 8): usa las señales del propio usuario, no las de otro ---'
+set role authenticated;
+set request.jwt.claim.sub = '11111111-1111-1111-1111-111111111101';
+-- Laura ya tiene un favorito (paso 4). No debería reaparecer en sus recomendaciones.
+select count(*) as favorito_repetido
+from public.personalized_places(20) pp
+where pp.id in (select place_id from public.favorites where user_id = '11111111-1111-1111-1111-111111111101');
+-- Debe devolver resultados igual (hay 72 lugares de sobra tras excluir 1 favorito).
+select count(*) as total_recomendados from public.personalized_places(6);
+reset role;
+
+\echo '--- 17) RPC personalized_places: un usuario sin favoritos/reseñas altas no rompe (cae a orden por rating) ---'
+set role authenticated;
+set request.jwt.claim.sub = '11111111-1111-1111-1111-111111111106';
+select count(*) as total_recomendados_sin_senal from public.personalized_places(6);
+reset role;
+
 \echo '--- listo ---'
