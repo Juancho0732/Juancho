@@ -7,7 +7,7 @@ propios (no inventados).
 
 El análisis completo de arquitectura, modelo de datos, flujo de IA, riesgos y decisiones está
 en [`docs/00-fase0-analisis.md`](docs/00-fase0-analisis.md). Este README cubre lo ya
-implementado (Fases 1 a 6).
+implementado (Fases 1 a 7).
 
 ## Estado del proyecto
 
@@ -25,7 +25,10 @@ implementado (Fases 1 a 6).
   distancia real. Ver detalle abajo.
 - ✅ **Fase 6** — Reviews: crear, editar, eliminar y calificar, con recálculo de promedio. Ver
   detalle abajo.
-- ⏳ Fases 7–8 — pendientes.
+- ✅ **Fase 7** — AI Search: input en lenguaje natural, Edge Function `ai-search` que interpreta
+  la intención, la valida, consulta Supabase y rankea determinísticamente, con respaldo heurístico
+  si la IA falla. Ver detalle abajo.
+- ⏳ Fase 8 — pendiente.
 
 ## Stack
 
@@ -89,7 +92,7 @@ src/
     favorites/       # hooks de favoritos (listar, alternar)
     location/        # useUserLocation (expo-location, permiso bajo demanda)
     reviews/         # validación, mutations (upsert/delete), ReviewFormSheet
-    ai-search/       # se llena en Fase 7
+    ai-search/       # types, api.ts (invoke + manejo de errores), useAiSearch
   services/         # supabase client + queries tipadas, query client, ranking
   hooks/, types/, utils/
 app.config.ts       # config de Expo (no app.json) — lee GOOGLE_MAPS_API_KEY del entorno
@@ -97,7 +100,8 @@ supabase/
   migrations/       # SQL versionado — esquema, RLS, triggers, RPCs
   seed.sql            # datos MOCK/DEMO (generado por seed/generate_seed.py)
   seed/generate_seed.py # script que produce seed.sql (reproducible, seed fijo)
-  functions/ai-search/ # Edge Function de IA (Fase 7)
+  functions/ai-search/ # Edge Function de IA: intención, heurística de respaldo, ranking,
+                        # proveedor de IA (Anthropic), orquestación (index.ts)
   tests/            # validación local de RLS sin depender de Supabase CLI/Docker
 docs/             # decisiones de arquitectura
 ```
@@ -244,6 +248,92 @@ llega al bundle de JavaScript).
   de "Eliminar reseña" usa un `ConfirmDialog` propio (modal) en vez de `Alert`, para que también
   funcione en la vía rápida de desarrollo web.
 
+## Búsqueda por IA (Fase 7)
+
+Implementa el pipeline descrito en `docs/00-fase0-analisis.md` (Reglas 8 y 10): **la IA nunca es
+la fuente de verdad de lugares/precios/disponibilidad**, solo interpreta la intención del usuario
+y (opcionalmente) redacta la explicación final — siempre a partir de datos ya consultados en
+Postgres.
+
+```
+Usuario escribe en Home → Edge Function ai-search
+  1. Interpreta intención  (IA con tool-calling forzado; si falla o no hay API key -> heurística regex)
+  2. Sanea/valida           (descarta cualquier campo que la IA haya inventado fuera de las listas curadas)
+  3. Consulta Supabase      (candidatos reales: activos, hasta 100, filtrados por categoría si hay alta confianza)
+  4. Rankea determinístico  (fórmula fija de Fase 0, la IA no decide el orden — Regla 10)
+  5. Explica                (IA redacta un resumen SOLO con los datos ya obtenidos; si falla -> plantilla)
+  6. Registra                (ai_search_logs: costo/uso, además sirve de límite de tasa)
+```
+
+- **`supabase/functions/ai-search/`** — Edge Function (Deno). Módulos separados y sin sintaxis
+  específica de Deno donde es posible, para poder probarlos con Jest sin tener Deno instalado:
+  - `intentSchema.ts` — esquema zod crudo + `sanitizeIntent()`, que normaliza localidad/ocasión
+    contra las listas curadas de la app y **descarta** cualquier valor que la IA haya devuelto
+    fuera de esas listas (nunca se confía en texto libre de la IA para filtrar la base de datos).
+  - `heuristicParser.ts` — parser por regex/palabras clave (presupuesto, personas, localidad,
+    ocasión) que sirve de respaldo cuando no hay proveedor de IA configurado o la llamada falla.
+    Probado con las frases exactas del prompt maestro (`__tests__/heuristicParser.test.ts`).
+  - `ranking.ts` — función pura y determinística (sin llamadas a IA ni red): pondera presupuesto
+    (0.25), localidad (0.20), rating (0.20), coincidencia de intención (0.20) y confianza por
+    número de reseñas (0.15). Documentada línea por línea; los pesos son la única "fórmula mágica"
+    del proyecto y están centralizados en `RANKING_WEIGHTS`.
+  - `aiProvider.ts` — interfaz `AIProvider` (Regla 8: cambiar de proveedor es implementar esta
+    interfaz, no tocar `index.ts`) + `AnthropicProvider`, con `fetch` crudo (sin SDK) contra la
+    API de Anthropic, usando tool-calling forzado (`tool_choice`) para obligar una respuesta JSON
+    estructurada en vez de parsear texto libre.
+  - `fallbackExplanation.ts` — arma un resumen en español solo con nombres/localidades/precios que
+    ya vinieron de Postgres, para cuando la llamada de explicación a la IA falla.
+  - `index.ts` — orquesta lo anterior: autentica al usuario (header `Authorization` reenviado),
+    aplica el límite de tasa (`AI_RATE_LIMIT_PER_MINUTE`, cuenta filas recientes de
+    `ai_search_logs` — control de costo, Regla 13), interpreta, sanea, consulta, rankea, explica y
+    registra. Nunca deja al usuario sin respuesta: si la IA falla en cualquier punto, cae al camino
+    heurístico/plantilla en vez de propagar el error.
+- **Cliente** (`src/features/ai-search/`) — `api.ts` invoca la Edge Function con
+  `supabase.functions.invoke('ai-search', { body: { query } })` y distingue los tres tipos de
+  error que expone `@supabase/supabase-js` (`FunctionsHttpError` con el cuerpo real de la
+  respuesta vía `error.context.json()`, `FunctionsFetchError` para fallas de red,
+  `FunctionsRelayError`) para no perder el mensaje que la función sí alcanzó a construir.
+  `useAiSearch` usa React Query con `staleTime` de 5 minutos — repetir la misma búsqueda de
+  inmediato no vuelve a gastar una llamada a la IA (Regla 3/13).
+- **UI** — el input de Home navega a `/recommendations?query=...`; esa pantalla cubre los cuatro
+  estados de la respuesta: cargando, error (con botón "Buscar manualmente" hacia `/search`),
+  "no entendimos, dinos más" (`needs_clarification`, mismo botón de respaldo) y éxito (explicación
+  + lista de `PlaceCard` con los resultados reales, favoritos incluidos).
+
+**Decisión que conviene confirmar:** por ahora la Edge Function corta la interpretación por IA
+también para la *explicación* si ya se usó la heurística (`usedFallbackParser`), en vez de
+intentar la IA solo para redactar el texto — si no pudimos confiar en la IA para entender qué
+pidió el usuario, tampoco se le pide que redacte sobre esos mismos resultados; se usa la plantilla
+en ambos casos. Es más conservador y barato, pero significa que un fallo puntual de la API dejará
+esa búsqueda entera sin el toque "conversacional" de la IA, no solo la interpretación.
+
+### Verificación (sandbox sin Docker/Deno/API key real)
+
+Mismo método que las fases anteriores (servidor REST propio contra el Postgres ya sembrado, fuera
+del repo) extendido para simular también la Edge Function, ya que este entorno no tiene Deno ni
+una API key de Anthropic real:
+
+- Se agregó una ruta `POST /functions/v1/ai-search` al servidor REST de verificación, que reenvía
+  a un pequeño servidor Node/`tsx` que **importa directamente los módulos reales de
+  `supabase/functions/ai-search/`** (`heuristicParser.ts`, `intentSchema.ts`, `ranking.ts`,
+  `fallbackExplanation.ts` — los mismos que corren bajo Jest, sin reimplementar nada) y reproduce
+  la orquestación de `index.ts` contra ese mismo REST de verificación.
+- Esto es fiel al comportamiento real en este entorno, no una simulación aparte: como no hay
+  `AI_API_KEY` configurada, `getAIProvider()` en el `index.ts` real también devuelve `null` y cae
+  exactamente a `heuristicParseIntent` + `buildFallbackExplanation` — el camino que se verificó es
+  el mismo que correría la función real acá.
+- Lo único que la verificación simplifica (documentado, no oculto): no valida el JWT contra un
+  Auth Server real (no hay GoTrue en este sandbox) — igual que la sesión falsa que
+  `useInitAuth.ts` recibe temporalmente en cada fase para poder navegar la app sin backend de auth
+  real. El límite de tasa y el registro en `ai_search_logs` sí corren de verdad, contra Postgres.
+- Recorrido probado con Playwright: Home (input + botón "Buscar con IA") → escribir la frase del
+  prompt maestro *"Tengo $50.000 y quiero salir con mis amigos en Chapinero"* → Recomendaciones
+  con explicación real y 6 lugares reales rankeados; luego una búsqueda vaga
+  ("Quiero hacer algo diferente este sábado.") → estado `needs_clarification` con el botón
+  "Buscar manualmente". También se confirmó que, al superar `AI_RATE_LIMIT_PER_MINUTE` búsquedas
+  en un minuto, las siguientes devuelven 429 en vez de seguir gastando cupo, y que cada búsqueda
+  válida (incluida la que pide aclaración) deja su fila en `ai_search_logs`.
+
 ## Testing
 
 ```bash
@@ -273,6 +363,6 @@ actualiza en pantalla en cada paso y que el diálogo de confirmación de borrado
 
 ## Próximos pasos
 
-Fase 7 (AI Search): input de lenguaje natural, Edge Function que interpreta la intención, valida
-los parámetros, consulta Supabase con el ranking de la Fase 0 y genera una explicación basada
-únicamente en los resultados reales obtenidos.
+Fase 8 (Personalización): usar el historial en `ai_search_logs` y los favoritos/reseñas del
+usuario para afinar resultados futuros, sin que eso reintroduzca a la IA como fuente de datos
+(sigue siendo Postgres + ranking determinístico, ahora con señales adicionales por usuario).

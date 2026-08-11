@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { PlaceCard } from '@/components/domain';
@@ -8,19 +8,6 @@ import { theme } from '@/design-system/theme';
 import { useFavoriteIds, useToggleFavorite } from '@/features/favorites';
 import { useUserLocation } from '@/features/location';
 import { useCategories, useNearbyPlaces, usePlaces } from '@/features/places';
-
-function EmptySection({ title, note }: { title: string; note: string }) {
-  return (
-    <View style={styles.section}>
-      <Text variant="subtitle">{title}</Text>
-      <Card>
-        <Text variant="body" color="textSecondary">
-          {note}
-        </Text>
-      </Card>
-    </View>
-  );
-}
 
 function NearbySection() {
   const location = useUserLocation();
@@ -91,6 +78,7 @@ function NearbySection() {
 }
 
 export default function HomeScreen() {
+  const [query, setQuery] = useState('');
   const { data: categories } = useCategories();
   const { data: popularPlaces, isLoading: isLoadingPopular } = usePlaces({ limit: 10 });
   const { data: favoriteIds } = useFavoriteIds();
@@ -102,14 +90,26 @@ export default function HomeScreen() {
     [categories],
   );
 
+  const handleAiSearch = () => {
+    const trimmed = query.trim();
+    if (!trimmed) return;
+    router.push({ pathname: '/recommendations', params: { query: trimmed } });
+  };
+
   return (
     <Screen>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text variant="title">¿Qué quieres hacer?</Text>
-        <Input
-          placeholder='Ej: "Algo diferente en Chapinero por $80.000"'
-          onFocus={() => router.push('/search')}
-        />
+        <View style={styles.aiSearch}>
+          <Input
+            placeholder='Ej: "Algo diferente en Chapinero por $80.000"'
+            value={query}
+            onChangeText={setQuery}
+            onSubmitEditing={handleAiSearch}
+            returnKeyType="search"
+          />
+          <Button label="Buscar con IA" onPress={handleAiSearch} disabled={!query.trim()} />
+        </View>
 
         <View style={styles.section}>
           <Text variant="subtitle">Categorías</Text>
@@ -155,11 +155,6 @@ export default function HomeScreen() {
         </View>
 
         <NearbySection />
-
-        <EmptySection
-          title="Recomendado para ti"
-          note="Recomendaciones personalizadas por IA — Fase 7/8."
-        />
       </ScrollView>
     </Screen>
   );
@@ -169,6 +164,9 @@ const styles = StyleSheet.create({
   scroll: {
     gap: theme.spacing.md,
     paddingBottom: theme.spacing.xl,
+  },
+  aiSearch: {
+    gap: theme.spacing.sm,
   },
   section: {
     gap: theme.spacing.sm,
