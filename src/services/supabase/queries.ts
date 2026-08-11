@@ -1,0 +1,132 @@
+import type { Category, Place, PlaceImage, Review } from '@/types/database';
+
+import { supabase } from './client';
+
+/**
+ * Capa de acceso a datos, tipada, sobre el esquema de supabase/migrations/.
+ * Sin lógica de UI. Cada función lanza si Supabase devuelve un error, para que
+ * el llamador decida cómo mostrarlo (no lo ocultamos silenciosamente).
+ */
+
+export async function listCategories(): Promise<Category[]> {
+  const { data, error } = await supabase.from('categories').select('*').order('name');
+  if (error) throw error;
+  return data;
+}
+
+export type ListPlacesFilters = {
+  locality?: string;
+  categoryId?: string;
+  maxPrice?: number;
+  search?: string;
+  limit?: number;
+};
+
+export async function listPlaces(filters: ListPlacesFilters = {}): Promise<Place[]> {
+  let query = supabase.from('places').select('*').eq('status', 'active');
+
+  if (filters.locality) {
+    query = query.eq('locality', filters.locality);
+  }
+  if (filters.categoryId) {
+    query = query.eq('category_id', filters.categoryId);
+  }
+  if (filters.maxPrice !== undefined) {
+    query = query.lte('price_min', filters.maxPrice);
+  }
+  if (filters.search) {
+    // Los operadores .or()/.ilike() de PostgREST usan `,()` como sintaxis de
+    // filtro; se limpian para que un término de búsqueda con esos caracteres
+    // no rompa el filtro ni se interprete como condiciones adicionales.
+    const safeTerm = filters.search.replace(/[,()%]/g, ' ').trim();
+    if (safeTerm) {
+      query = query.or(`name.ilike.%${safeTerm}%,description.ilike.%${safeTerm}%`);
+    }
+  }
+
+  query = query.order('rating_avg', { ascending: false }).limit(filters.limit ?? 30);
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return data;
+}
+
+export async function getPlaceById(id: string): Promise<Place | null> {
+  const { data, error } = await supabase.from('places').select('*').eq('id', id).maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export async function listPlaceImages(placeId: string): Promise<PlaceImage[]> {
+  const { data, error } = await supabase
+    .from('place_images')
+    .select('*')
+    .eq('place_id', placeId)
+    .order('position');
+  if (error) throw error;
+  return data;
+}
+
+export async function listReviewsForPlace(placeId: string): Promise<Review[]> {
+  const { data, error } = await supabase
+    .from('reviews')
+    .select('*')
+    .eq('place_id', placeId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
+export async function listFavoritePlaceIds(userId: string): Promise<string[]> {
+  const { data, error } = await supabase.from('favorites').select('place_id').eq('user_id', userId);
+  if (error) throw error;
+  return data.map((row) => row.place_id);
+}
+
+export async function addFavorite(userId: string, placeId: string): Promise<void> {
+  const { error } = await supabase.from('favorites').insert({ user_id: userId, place_id: placeId });
+  if (error) throw error;
+}
+
+export async function removeFavorite(userId: string, placeId: string): Promise<void> {
+  const { error } = await supabase
+    .from('favorites')
+    .delete()
+    .eq('user_id', userId)
+    .eq('place_id', placeId);
+  if (error) throw error;
+}
+
+export type UpsertReviewInput = {
+  placeId: string;
+  userId: string;
+  rating: number;
+  comment?: string;
+  amountPaid?: number;
+  occasion?: string;
+};
+
+export async function upsertReview(input: UpsertReviewInput): Promise<Review> {
+  const { data, error } = await supabase
+    .from('reviews')
+    .upsert(
+      {
+        place_id: input.placeId,
+        user_id: input.userId,
+        rating: input.rating,
+        comment: input.comment ?? null,
+        amount_paid: input.amountPaid ?? null,
+        occasion: input.occasion ?? null,
+      },
+      { onConflict: 'place_id,user_id' },
+    )
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteReview(reviewId: string): Promise<void> {
+  const { error } = await supabase.from('reviews').delete().eq('id', reviewId);
+  if (error) throw error;
+}
