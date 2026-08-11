@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { PlaceCard } from '@/components/domain';
-import { Button, Card, Chip, Input, Screen, Text } from '@/components/ui';
+import { Button, Card, Chip, Input, QueryState, Screen, Text } from '@/components/ui';
 import { theme } from '@/design-system/theme';
 import { useFavoriteIds, useToggleFavorite } from '@/features/favorites';
 import { useUserLocation } from '@/features/location';
@@ -12,7 +12,12 @@ import { useCategories, useNearbyPlaces, usePersonalizedPlaces, usePlaces } from
 function PersonalizedSection() {
   const { data: favoriteIds } = useFavoriteIds();
   const hasSignal = (favoriteIds?.length ?? 0) > 0;
-  const { data: personalizedPlaces, isLoading } = usePersonalizedPlaces(hasSignal);
+  const {
+    data: personalizedPlaces,
+    isLoading,
+    isError,
+    refetch,
+  } = usePersonalizedPlaces(hasSignal);
   const { data: categories } = useCategories();
   const toggleFavorite = useToggleFavorite();
 
@@ -24,8 +29,31 @@ function PersonalizedSection() {
 
   // Sin favoritos todavía no hay señal real que personalizar: la RPC caería
   // a ordenar por rating, igual que "Lugares populares" — mostrarla ahí
-  // sería fingir personalización donde no la hay.
-  if (!hasSignal || isLoading || !personalizedPlaces || personalizedPlaces.length === 0) {
+  // sería fingir personalización donde no la hay. Mientras carga, tampoco
+  // se muestra nada (evita un parpadeo por una sección "bonus"). Si SÍ hay
+  // señal y la consulta falla de verdad, ahí no se oculta: quedarse callado
+  // sería indistinguible de "no tenés señal todavía".
+  if (!hasSignal || isLoading) {
+    return null;
+  }
+
+  if (isError) {
+    return (
+      <View style={styles.section}>
+        <Text variant="subtitle">Recomendado para ti</Text>
+        <Card>
+          <View style={styles.nearbyPrompt}>
+            <Text variant="body" color="danger">
+              No pudimos cargar tus recomendaciones. Intenta de nuevo.
+            </Text>
+            <Button label="Reintentar" variant="secondary" onPress={() => refetch()} />
+          </View>
+        </Card>
+      </View>
+    );
+  }
+
+  if (!personalizedPlaces || personalizedPlaces.length === 0) {
     return null;
   }
 
@@ -53,7 +81,7 @@ function PersonalizedSection() {
 function NearbySection() {
   const location = useUserLocation();
   const coords = location.status === 'granted' ? location.coords : null;
-  const { data: nearbyPlaces, isLoading } = useNearbyPlaces(coords);
+  const { data: nearbyPlaces, isLoading, isError, refetch } = useNearbyPlaces(coords);
   const { data: categories } = useCategories();
   const { data: favoriteIds } = useFavoriteIds();
   const toggleFavorite = useToggleFavorite();
@@ -91,6 +119,15 @@ function NearbySection() {
             {location.message}
           </Text>
         </Card>
+      ) : isError ? (
+        <Card>
+          <View style={styles.nearbyPrompt}>
+            <Text variant="body" color="danger">
+              No pudimos cargar los lugares cercanos. Revisa tu conexión e intenta de nuevo.
+            </Text>
+            <Button label="Reintentar" variant="secondary" onPress={() => refetch()} />
+          </View>
+        </Card>
       ) : nearbyPlaces && nearbyPlaces.length > 0 ? (
         <View style={styles.placeList}>
           {nearbyPlaces.map((place) => (
@@ -120,8 +157,18 @@ function NearbySection() {
 
 export default function HomeScreen() {
   const [query, setQuery] = useState('');
-  const { data: categories } = useCategories();
-  const { data: popularPlaces, isLoading: isLoadingPopular } = usePlaces({ limit: 10 });
+  const {
+    data: categories,
+    isLoading: isCategoriesLoading,
+    isError: isCategoriesError,
+    refetch: refetchCategories,
+  } = useCategories();
+  const {
+    data: popularPlaces,
+    isLoading: isLoadingPopular,
+    isError: isPopularError,
+    refetch: refetchPopular,
+  } = usePlaces({ limit: 10 });
   const { data: favoriteIds } = useFavoriteIds();
   const toggleFavorite = useToggleFavorite();
 
@@ -154,32 +201,40 @@ export default function HomeScreen() {
 
         <View style={styles.section}>
           <Text variant="subtitle">Categorías</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={styles.chipRow}>
-              {(categories ?? []).map((category) => (
-                <Chip
-                  key={category.id}
-                  label={category.name}
-                  onPress={() =>
-                    router.push({ pathname: '/search', params: { categoryId: category.id } })
-                  }
-                />
-              ))}
-            </View>
-          </ScrollView>
+          <QueryState
+            isLoading={isCategoriesLoading}
+            isError={isCategoriesError}
+            onRetry={refetchCategories}
+            isEmpty={(categories?.length ?? 0) === 0}
+            emptyMessage="No encontramos categorías todavía."
+          >
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={styles.chipRow}>
+                {(categories ?? []).map((category) => (
+                  <Chip
+                    key={category.id}
+                    label={category.name}
+                    onPress={() =>
+                      router.push({ pathname: '/search', params: { categoryId: category.id } })
+                    }
+                  />
+                ))}
+              </View>
+            </ScrollView>
+          </QueryState>
         </View>
 
         <PersonalizedSection />
 
         <View style={styles.section}>
           <Text variant="subtitle">Lugares populares</Text>
-          {isLoadingPopular ? (
-            <Card>
-              <Text variant="body" color="textSecondary">
-                Cargando…
-              </Text>
-            </Card>
-          ) : (
+          <QueryState
+            isLoading={isLoadingPopular}
+            isError={isPopularError}
+            onRetry={refetchPopular}
+            isEmpty={(popularPlaces?.length ?? 0) === 0}
+            emptyMessage="Todavía no hay lugares para mostrar."
+          >
             <View style={styles.placeList}>
               {(popularPlaces ?? []).map((place) => (
                 <PlaceCard
@@ -194,7 +249,7 @@ export default function HomeScreen() {
                 />
               ))}
             </View>
-          )}
+          </QueryState>
         </View>
 
         <NearbySection />

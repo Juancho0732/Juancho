@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { PlaceCard } from '@/components/domain';
-import { Button, Card, Input, Screen, Text } from '@/components/ui';
+import { Button, Input, QueryState, Screen, Text } from '@/components/ui';
 import { theme } from '@/design-system/theme';
 import { useFavoriteIds, useToggleFavorite } from '@/features/favorites';
 import { FiltersSheet, useCategories, usePlaces, type PlaceFilters } from '@/features/places';
@@ -19,7 +19,12 @@ export default function SearchScreen() {
 
   const debouncedQuery = useDebouncedValue(query);
   const { data: categories } = useCategories();
-  const { data: places, isLoading } = usePlaces({
+  const {
+    data: places,
+    isLoading,
+    isError,
+    refetch,
+  } = usePlaces({
     search: debouncedQuery,
     locality: filters.locality,
     categoryId: filters.categoryId,
@@ -56,15 +61,16 @@ export default function SearchScreen() {
           />
         </View>
 
-        {isLoading ? (
-          <Card>
-            <Text variant="body" color="textSecondary">
-              Buscando…
-            </Text>
-          </Card>
-        ) : places && places.length > 0 ? (
+        <QueryState
+          isLoading={isLoading}
+          isError={isError}
+          onRetry={refetch}
+          isEmpty={(places?.length ?? 0) === 0}
+          emptyMessage="No encontramos lugares con esos criterios. Prueba ajustando la búsqueda o los filtros."
+          loadingMessage="Buscando…"
+        >
           <ScrollView contentContainerStyle={styles.results} showsVerticalScrollIndicator={false}>
-            {places.map((place) => (
+            {(places ?? []).map((place) => (
               <PlaceCard
                 key={place.id}
                 place={place}
@@ -77,14 +83,7 @@ export default function SearchScreen() {
               />
             ))}
           </ScrollView>
-        ) : (
-          <Card>
-            <Text variant="body" color="textSecondary">
-              No encontramos lugares con esos criterios. Prueba ajustando la búsqueda o los
-              filtros.
-            </Text>
-          </Card>
-        )}
+        </QueryState>
       </View>
 
       <FiltersSheet

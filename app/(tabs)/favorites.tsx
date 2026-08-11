@@ -3,13 +3,13 @@ import { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { PlaceCard } from '@/components/domain';
-import { Card, Screen, Text } from '@/components/ui';
+import { QueryState, Screen, Text } from '@/components/ui';
 import { theme } from '@/design-system/theme';
 import { useFavoritePlaces, useToggleFavorite } from '@/features/favorites';
 import { useCategories } from '@/features/places';
 
 export default function FavoritesScreen() {
-  const { data: places, isLoading } = useFavoritePlaces();
+  const { data: places, isLoading, isError, refetch } = useFavoritePlaces();
   const { data: categories } = useCategories();
   const toggleFavorite = useToggleFavorite();
 
@@ -23,15 +23,15 @@ export default function FavoritesScreen() {
       <View style={styles.content}>
         <Text variant="title">Favoritos</Text>
 
-        {isLoading ? (
-          <Card>
-            <Text variant="body" color="textSecondary">
-              Cargando…
-            </Text>
-          </Card>
-        ) : places && places.length > 0 ? (
+        <QueryState
+          isLoading={isLoading}
+          isError={isError}
+          onRetry={refetch}
+          isEmpty={(places?.length ?? 0) === 0}
+          emptyMessage="Todavía no has guardado lugares. Toca el ♡ en cualquier lugar para guardarlo aquí."
+        >
           <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
-            {places.map((place) => (
+            {(places ?? []).map((place) => (
               <PlaceCard
                 key={place.id}
                 place={place}
@@ -42,13 +42,7 @@ export default function FavoritesScreen() {
               />
             ))}
           </ScrollView>
-        ) : (
-          <Card>
-            <Text variant="body" color="textSecondary">
-              Todavía no has guardado lugares. Toca el ♡ en cualquier lugar para guardarlo aquí.
-            </Text>
-          </Card>
-        )}
+        </QueryState>
       </View>
     </Screen>
   );

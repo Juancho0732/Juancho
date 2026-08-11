@@ -32,7 +32,7 @@ function ScheduleList({ schedule }: { schedule: PlaceSchedule }) {
 
 export default function PlaceDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: place, isLoading } = usePlace(id);
+  const { data: place, isLoading, isError, refetch } = usePlace(id);
   const { data: images } = usePlaceImages(id);
   const { data: categories } = useCategories();
   const { data: favoriteIds } = useFavoriteIds();
@@ -44,6 +44,21 @@ export default function PlaceDetailScreen() {
         <Text variant="body" color="textSecondary">
           Cargando…
         </Text>
+      </Screen>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Screen>
+        <Card>
+          <View style={styles.errorContent}>
+            <Text variant="body" color="danger">
+              No pudimos cargar este lugar. Revisa tu conexión e intenta de nuevo.
+            </Text>
+            <Button label="Reintentar" variant="secondary" onPress={() => refetch()} />
+          </View>
+        </Card>
       </Screen>
     );
   }
@@ -149,6 +164,10 @@ const styles = StyleSheet.create({
   scroll: {
     gap: theme.spacing.md,
     paddingBottom: theme.spacing.xl,
+  },
+  errorContent: {
+    gap: theme.spacing.sm,
+    alignItems: 'flex-start',
   },
   gallery: {
     marginHorizontal: -theme.spacing.md,

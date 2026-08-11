@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { ReviewListItem } from '@/components/domain';
-import { Button, Card, ConfirmDialog, Screen, StarRating, Text } from '@/components/ui';
+import { Button, ConfirmDialog, QueryState, Screen, StarRating, Text } from '@/components/ui';
 import { theme } from '@/design-system/theme';
 import { useAuthStore } from '@/features/auth';
 import { usePlace } from '@/features/places';
@@ -23,7 +23,7 @@ export default function PlaceReviewsScreen() {
   const userId = useAuthStore((state) => state.session?.user.id);
 
   const { data: place } = usePlace(id);
-  const { data: reviews, isLoading } = useReviewsForPlace(id);
+  const { data: reviews, isLoading, isError, refetch } = useReviewsForPlace(id);
   const upsertReview = useUpsertReview(id);
   const deleteReview = useDeleteReview(id);
 
@@ -74,15 +74,15 @@ export default function PlaceReviewsScreen() {
           ) : null}
         </View>
 
-        {isLoading ? (
-          <Card>
-            <Text variant="body" color="textSecondary">
-              Cargando…
-            </Text>
-          </Card>
-        ) : reviews && reviews.length > 0 ? (
+        <QueryState
+          isLoading={isLoading}
+          isError={isError}
+          onRetry={refetch}
+          isEmpty={(reviews?.length ?? 0) === 0}
+          emptyMessage="Todavía no hay reseñas. ¡Sé la primera persona en dejar una!"
+        >
           <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
-            {reviews.map((review) => (
+            {(reviews ?? []).map((review) => (
               <ReviewListItem
                 key={review.id}
                 review={review}
@@ -92,13 +92,7 @@ export default function PlaceReviewsScreen() {
               />
             ))}
           </ScrollView>
-        ) : (
-          <Card>
-            <Text variant="body" color="textSecondary">
-              Todavía no hay reseñas. ¡Sé la primera persona en dejar una!
-            </Text>
-          </Card>
-        )}
+        </QueryState>
       </View>
 
       <ReviewFormSheet

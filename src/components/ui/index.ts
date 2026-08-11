@@ -4,6 +4,7 @@ export { Chip } from './Chip';
 export { ConfirmDialog } from './ConfirmDialog';
 export { FormInput } from './FormInput';
 export { Input } from './Input';
+export { QueryState } from './QueryState';
 export { Screen } from './Screen';
 export { StarRating } from './StarRating';
 export { Text } from './Text';
