@@ -6,6 +6,7 @@ import { buildFallbackExplanation } from './fallbackExplanation.ts';
 import { heuristicParseIntent } from './heuristicParser.ts';
 import { isIntentEmpty, sanitizeIntent } from './intentSchema.ts';
 import { rankPlaces } from './ranking.ts';
+import { checkRateLimit, type RateLimitConfig } from './rateLimiter.ts';
 import type { AiSearchResponse, CategoryRow, PlaceRow } from './types.ts';
 
 const CORS_HEADERS = {
@@ -66,7 +67,16 @@ Deno.serve(async (req: Request) => {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  const rateLimitPerMinute = Number(Deno.env.get('AI_RATE_LIMIT_PER_MINUTE') ?? '5');
+  // Prioridad 9 (auditoría de beta-readiness): además del límite por usuario
+  // por minuto que ya existía, un límite diario por usuario (una sola cuenta
+  // no puede sostener el límite por minuto 24/7) y un límite global por
+  // minuto (protege el costo agregado con muchos usuarios legítimos a la
+  // vez). Ver rateLimiter.ts para el porqué de cada uno.
+  const rateLimitConfig: RateLimitConfig = {
+    perUserPerMinute: Number(Deno.env.get('AI_RATE_LIMIT_PER_MINUTE') ?? '5'),
+    perUserPerDay: Number(Deno.env.get('AI_DAILY_LIMIT_PER_USER') ?? '50'),
+    globalPerMinute: Number(Deno.env.get('AI_GLOBAL_RATE_LIMIT_PER_MINUTE') ?? '60'),
+  };
 
   try {
     const authHeader = req.headers.get('Authorization');
@@ -105,19 +115,40 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // --- Control de costo: límite de búsquedas por minuto por usuario. ---
+    // --- Control de costo: límite por usuario/minuto, por usuario/día y global/minuto. ---
     const oneMinuteAgo = new Date(Date.now() - 60_000).toISOString();
-    const { count: recentSearches, error: rateLimitError } = await adminClient
-      .from('ai_search_logs')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .gte('created_at', oneMinuteAgo);
-    if (rateLimitError) throw rateLimitError;
-    if ((recentSearches ?? 0) >= rateLimitPerMinute) {
-      return jsonResponse(
-        { status: 'error', message: 'Estás buscando muy rápido. Espera un momento e intenta de nuevo.' },
-        429,
-      );
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60_000).toISOString();
+
+    const [userMinuteCount, userDayCount, globalMinuteCount] = await Promise.all([
+      adminClient
+        .from('ai_search_logs')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .gte('created_at', oneMinuteAgo),
+      adminClient
+        .from('ai_search_logs')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .gte('created_at', oneDayAgo),
+      adminClient
+        .from('ai_search_logs')
+        .select('id', { count: 'exact', head: true })
+        .gte('created_at', oneMinuteAgo),
+    ]);
+    if (userMinuteCount.error) throw userMinuteCount.error;
+    if (userDayCount.error) throw userDayCount.error;
+    if (globalMinuteCount.error) throw globalMinuteCount.error;
+
+    const rateLimitResult = checkRateLimit(
+      {
+        userSearchesLastMinute: userMinuteCount.count ?? 0,
+        userSearchesLastDay: userDayCount.count ?? 0,
+        globalSearchesLastMinute: globalMinuteCount.count ?? 0,
+      },
+      rateLimitConfig,
+    );
+    if (!rateLimitResult.allowed) {
+      return jsonResponse({ status: 'error', message: rateLimitResult.message }, 429);
     }
 
     // --- Interpretación: IA primero, heurística si falla (nunca se deja al usuario sin nada). ---

@@ -574,6 +574,48 @@ auditoría contra las dos capas (que queden delimitadas como dato en la capa 1, 
 comprometida hipotética se rechace en la capa 2), más dos búsquedas legítimas de punta a punta para
 confirmar que la defensa no rompe el uso normal.
 
+### Control de costos de IA (auditoría de beta-readiness, Prioridad 9)
+
+Antes de esta prioridad solo existía `AI_RATE_LIMIT_PER_MINUTE` (por usuario, por minuto) — protege
+contra un abuso rápido y evidente desde una cuenta, pero deja dos huecos reales:
+
+1. **Una sola cuenta podía sostener el límite 24 horas al día.** Con el default de 5/minuto, hasta
+   7200 búsquedas por IA en un día desde un único usuario.
+2. **El costo agregado no tenía techo con muchos usuarios legítimos a la vez.** 1000 personas
+   buscando 4 veces por minuto cada una ya son 4000 llamadas a la IA por minuto, sin ningún límite
+   que lo frene.
+
+`supabase/functions/ai-search/rateLimiter.ts` (nuevo) agrega los dos límites que faltaban, sin
+tocar la arquitectura: `checkRateLimit()` es una función pura (sin red/DB) que recibe tres
+contadores y decide si la búsqueda pasa, en este orden — por usuario/minuto (`AI_RATE_LIMIT_PER_MINUTE`,
+default 5), por usuario/día (`AI_DAILY_LIMIT_PER_USER`, default 50) y global/minuto
+(`AI_GLOBAL_RATE_LIMIT_PER_MINUTE`, default 60) — devolviendo un mensaje genérico y seguro
+(Prioridad 4) distinto para cada caso, sin exponer detalle interno. `index.ts` pide los tres
+conteos en paralelo (`Promise.all`, mismas consultas `count: 'exact', head: true` contra
+`ai_search_logs`, ya indexada por `user_id` y `created_at` desde la Fase 7 — no hizo falta ninguna
+migración nueva) y le pasa el resultado a `checkRateLimit()`.
+
+**Riesgo residual documentado, no resuelto (no amerita más complejidad para una beta):** el
+conteo de "búsquedas recientes" depende de que cada búsqueda se haya registrado con éxito en
+`ai_search_logs`. Si ese `insert` falla (el código ya lo tolera sin romper la búsqueda del usuario:
+`if (logError) console.error(...)`, nunca `throw`), esa búsqueda específica no cuenta para el
+límite — el límite se vuelve *menos* efectivo en ese caso puntual, pero no desaparece (sigue
+exigiendo que la consulta de conteo funcione en cada intento, y cualquier búsqueda sí registrada
+sigue contando). Resolverlo de forma robusta (ej. un contador atómico independiente del insert)
+sería exactamente el tipo de complejidad de "sistema de billing" que esta prioridad pidió
+explícitamente evitar.
+
+Se mantiene sin cambios, a propósito: el fallback heurístico (`heuristicParseIntent`/
+`buildFallbackExplanation`, sin IA) sigue siendo el camino cuando la IA falla, y el ranking
+(`ranking.ts`) sigue siendo 100% determinístico — los límites de costo son una capa antes de llegar
+a la IA, no tocan lo que pasa después.
+
+`supabase/functions/ai-search/__tests__/rateLimiter.test.ts` (nuevo, 6 casos) prueba `checkRateLimit`
+de forma aislada: permite cuando los tres contadores están bajo el límite, bloquea por cada límite
+por separado (usuario/minuto, usuario/día, global/minuto) con el mensaje correspondiente, confirma
+el orden de evaluación cuando los tres límites se superan a la vez, y confirma que justo por debajo
+de cada límite la búsqueda sigue pasando.
+
 ### Errores internos (auditoría de beta-readiness, Prioridad 4)
 
 Ningún catch de la app le muestra al usuario el mensaje crudo de un error — puede traer detalle
