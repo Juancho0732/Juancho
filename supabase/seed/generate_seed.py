@@ -126,15 +126,22 @@ SEED_CONFIRM_PHRASE = "si-quiero-cargar-datos-ficticios"
 
 
 def seed_guard_block() -> str:
-    """Salvaguarda (auditoría de beta-readiness, Prioridad 1/7): este archivo
-    carga datos FICTICIOS de desarrollo y nunca debe correr contra un
+    """Salvaguarda (auditoría de beta-readiness, Prioridades 1 y 12): este
+    archivo carga datos FICTICIOS de desarrollo y nunca debe correr contra un
     proyecto con datos reales. Se frena solo, con un mensaje explícito, salvo
     que quien lo ejecute:
       1) haya puesto explícitamente la frase de confirmación en la misma
-         sesión/conexión (no es algo que se corra "sin querer"), y
+         sesión/conexión (no es algo que se corra "sin querer"),
       2) la base todavía no tenga ningún lugar real (is_mock = false) -- si
-         ya lo tiene, sembrar MOCK encima siempre se rechaza, confirmación o no.
+         ya lo tiene, sembrar MOCK encima siempre se rechaza, confirmación o no, y
+      3) la base todavía no tenga ningún perfil que no sea uno de los usuarios
+         de desarrollo fijos de este mismo seed (Prioridad 12: el chequeo #2
+         por sí solo no cubre el caso de una beta ya con usuarios reales
+         registrados pero todavía sin ningún lugar real importado -- ahí
+         is_mock=false nunca se cumple, y sin este chequeo el seed igual
+         sembraría 6 perfiles de desarrollo falsos encima de cuentas reales).
     """
+    dev_user_ids_sql = ", ".join(sql_str(user_id) for user_id, _, _ in DEV_USERS)
     return "\n".join(
         [
             "-- ============================================================================",
@@ -146,8 +153,9 @@ def seed_guard_block() -> str:
             "--",
             f"--   SET myapp.confirm_mock_seed = '{SEED_CONFIRM_PHRASE}';",
             "--",
-            "-- Sin esa confirmación explícita, o si la base ya tiene algún lugar real",
-            "-- (is_mock = false), este script se detiene sin cambiar nada.",
+            "-- Sin esa confirmación explícita, si la base ya tiene algún lugar real",
+            "-- (is_mock = false), o si ya tiene algún perfil que no sea uno de los",
+            "-- usuarios de desarrollo de este seed, este script se detiene sin cambiar nada.",
             "-- ============================================================================",
             "do $$",
             "begin",
@@ -160,6 +168,12 @@ def seed_guard_block() -> str:
             "  if exists (select 1 from public.places where is_mock = false) then",
             "    raise exception 'Seed MOCK abortado: ya existen lugares reales (is_mock = false) "
             "en esta base. No se puede sembrar datos ficticios sobre datos reales.';",
+            "  end if;",
+            "",
+            f"  if exists (select 1 from public.profiles where id not in ({dev_user_ids_sql})) then",
+            "    raise exception 'Seed MOCK abortado: ya existen perfiles que no son los usuarios "
+            "de desarrollo de este seed -- esta base ya tiene cuentas reales, aunque todavía no "
+            "tenga lugares reales. No se puede sembrar datos ficticios ahí.';",
             "  end if;",
             "end",
             "$$;",

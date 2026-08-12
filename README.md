@@ -231,10 +231,10 @@ Decisiones tomadas al implementar (afinan el análisis de Fase 0 con casos concr
 5. Para regenerar el seed (por ejemplo, al escalar de 100 a 500 lugares — ver
    `docs/00-fase0-analisis.md` sección 6): `python3 supabase/seed/generate_seed.py > supabase/seed.sql`.
 
-### Salvaguarda del seed MOCK (auditoría de beta-readiness, Prioridad 1)
+### Salvaguarda del seed MOCK (auditoría de beta-readiness, Prioridades 1 y 12)
 
 `supabase/seed.sql` carga datos **ficticios** — nunca debe correr contra un proyecto con usuarios
-o datos reales. Antes solo había un aviso en este README; ahora el archivo se protege solo, en dos
+o datos reales. Antes solo había un aviso en este README; ahora el archivo se protege solo, en tres
 capas:
 
 1. **Confirmación explícita obligatoria.** El archivo se aborta (sin cambiar nada) salvo que, en
@@ -242,9 +242,20 @@ capas:
    ```sql
    SET myapp.confirm_mock_seed = 'si-quiero-cargar-datos-ficticios';
    ```
-2. **Bloqueo si ya hay datos reales.** Si la base ya tiene algún lugar con `is_mock = false`, el
+2. **Bloqueo si ya hay lugares reales.** Si la base ya tiene algún lugar con `is_mock = false`, el
    seed se rechaza igual, aunque se haya confirmado — no se puede sembrar MOCK encima de datos
    reales.
+3. **Bloqueo si ya hay cuentas reales, aunque todavía no haya lugares reales (Prioridad 12).** El
+   chequeo #2 por sí solo dejaba un hueco real: una beta puede tener usuarios ya registrados
+   (`auth.users`/`profiles` reales) usando el catálogo MOCK como contenido temporal, sin que nadie
+   haya importado todavía ningún lugar real (`import_real_places.py`, más abajo) — en ese caso
+   `is_mock = false` nunca se cumple, y sin este tercer chequeo el seed habría sembrado alegremente
+   6 perfiles de desarrollo falsos (con emails/UUIDs fijos) encima de una base con cuentas reales.
+   Ahora el seed también se rechaza si `public.profiles` tiene cualquier fila que no sea uno de los
+   6 usuarios de desarrollo fijos que el propio seed define — verificado insertando un perfil con
+   un UUID/email cualquiera (simulando un registro real) contra una base recién migrada y
+   confirmando que el seed se frena con ese caso específico, además de re-confirmar los otros dos
+   (sin confirmación, y con un lugar real ya presente) contra una base nueva de punta a punta.
 
 Todo el archivo corre dentro de una única transacción (`begin;` ... `commit;`), así que si la
 salvaguarda lanza una excepción, nada se llega a insertar — ni siquiera corriendo `psql` sin

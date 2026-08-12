@@ -13,8 +13,9 @@ begin;
 --
 --   SET myapp.confirm_mock_seed = 'si-quiero-cargar-datos-ficticios';
 --
--- Sin esa confirmación explícita, o si la base ya tiene algún lugar real
--- (is_mock = false), este script se detiene sin cambiar nada.
+-- Sin esa confirmación explícita, si la base ya tiene algún lugar real
+-- (is_mock = false), o si ya tiene algún perfil que no sea uno de los
+-- usuarios de desarrollo de este seed, este script se detiene sin cambiar nada.
 -- ============================================================================
 do $$
 begin
@@ -24,6 +25,10 @@ begin
 
   if exists (select 1 from public.places where is_mock = false) then
     raise exception 'Seed MOCK abortado: ya existen lugares reales (is_mock = false) en esta base. No se puede sembrar datos ficticios sobre datos reales.';
+  end if;
+
+  if exists (select 1 from public.profiles where id not in ('11111111-1111-1111-1111-111111111101', '11111111-1111-1111-1111-111111111102', '11111111-1111-1111-1111-111111111103', '11111111-1111-1111-1111-111111111104', '11111111-1111-1111-1111-111111111105', '11111111-1111-1111-1111-111111111106')) then
+    raise exception 'Seed MOCK abortado: ya existen perfiles que no son los usuarios de desarrollo de este seed -- esta base ya tiene cuentas reales, aunque todavía no tenga lugares reales. No se puede sembrar datos ficticios ahí.';
   end if;
 end
 $$;
