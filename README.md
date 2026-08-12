@@ -31,11 +31,16 @@ implementado (Fases 1 a 8).
 - ✅ **Fase 8** — Personalización: sección "Recomendado para ti" en Home basada en las señales
   reales del propio usuario (favoritos y reseñas bien calificadas), sin IA de por medio. Ver
   detalle abajo.
-- 🔄 **Auditoría de beta-readiness** — antes de abrir el MVP a usuarios reales se hizo una revisión
-  de seguridad/RLS/IA/errores/rendimiento/UX y se está remediando por prioridades. Prioridad 1
-  (datos reales) ya está lista — ver "Datos reales" y "Salvaguarda del seed MOCK" abajo. El resto
-  de prioridades (manejo de errores visible, seguridad de la IA, recuperación de contraseña, etc.)
-  quedan pendientes.
+- ✅ **Auditoría de beta-readiness (Prioridades 1-15)** — antes de abrir el MVP a usuarios reales
+  se hizo una revisión de datos reales/seed, errores visibles, seguridad de la IA, mensajes de
+  error seguros, recuperación de contraseña, errores de mutación, paginación/escalabilidad,
+  validación de datos, costos de IA, CI, seguridad de configuración, salvaguarda del seed,
+  rendimiento de listas y accesibilidad — todas remediadas y documentadas en sus propias secciones
+  de este README. El cierre completo, con el walkthrough final de 25 puntos como beta tester,
+  riesgos pendientes y qué configuración externa falta antes de invitar beta testers reales, está
+  en [`docs/BETA_READINESS_FINAL.md`](docs/BETA_READINESS_FINAL.md) — **léelo antes de decidir
+  abrir la beta**, distingue claramente lo probado de lo que requiere verificación manual contra
+  un backend real.
 
 ## Stack
 
