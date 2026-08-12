@@ -14,15 +14,37 @@ type Props = {
 };
 
 export function StarRating({ value, onChange, size = 24 }: Props) {
+  // Prioridad 14 (accesibilidad): de solo lectura (sin onChange, ej. mostrar
+  // el rating de un lugar) es una sola pieza de información, no 5 controles
+  // -- se agrupa en un solo elemento accesible con un resumen ("4 de 5
+  // estrellas") en vez de 5 paradas de lector de pantalla anunciando cada
+  // estrella por separado. Editable (con onChange, el selector del
+  // formulario de reseña) sigue siendo 5 botones individuales, ahí sí hace
+  // falta elegir una estrella puntual.
+  if (!onChange) {
+    return (
+      <View style={styles.row} accessible accessibilityLabel={`${value} de 5 estrellas`}>
+        {STARS.map((star) => (
+          <Text
+            key={star}
+            importantForAccessibility="no-hide-descendants"
+            style={{ fontSize: size, color: star <= value ? theme.colors.rating : theme.colors.border }}
+          >
+            ★
+          </Text>
+        ))}
+      </View>
+    );
+  }
+
   return (
     <View style={styles.row}>
       {STARS.map((star) => (
         <Pressable
           key={star}
-          disabled={!onChange}
-          onPress={() => onChange?.(star)}
+          onPress={() => onChange(star)}
           hitSlop={4}
-          accessibilityRole={onChange ? 'button' : undefined}
+          accessibilityRole="button"
           accessibilityLabel={`${star} estrella${star > 1 ? 's' : ''}`}
         >
           <Text style={{ fontSize: size, color: star <= value ? theme.colors.rating : theme.colors.border }}>

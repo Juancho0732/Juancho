@@ -17,6 +17,12 @@ export function Input({ label, style, ...rest }: Props) {
         </Text>
       ) : null}
       <TextInput
+        // Prioridad 14 (accesibilidad): el label de arriba es solo un <Text>
+        // visual, no está asociado al input para un lector de pantalla --
+        // sin esto, VoiceOver/TalkBack anuncian el campo sin decir para qué
+        // es. `rest` va después para que un accessibilityLabel explícito del
+        // caller siga pudiendo pisar este default.
+        accessibilityLabel={label}
         placeholderTextColor={theme.colors.textSecondary}
         style={[styles.input, style]}
         {...rest}

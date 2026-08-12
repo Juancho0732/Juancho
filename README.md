@@ -490,6 +490,58 @@ hacían falta):**
   `src/features/places/` y `src/features/favorites/`, ninguno tiene un patrón que dispare
   refetches innecesarios.
 
+### Accesibilidad (auditoría de beta-readiness, Prioridad 14)
+
+Sin rediseño: los cuatro cambios de esta prioridad son props de accesibilidad y una corrección de
+rol semántico, no cambios visuales ni de navegación.
+
+- **`Input` sin label asociado al campo (`src/components/ui/Input.tsx`).** El label de arriba de
+  cada campo (login, registro, reseñas, filtro de presupuesto) era solo un `<Text>` visual, sin
+  ninguna relación programática con el `TextInput` de abajo — un lector de pantalla anunciaba el
+  campo ("campo de texto") sin decir para qué es. Ahora `TextInput` recibe
+  `accessibilityLabel={label}` por defecto, puesto antes de `{...rest}` para que un
+  `accessibilityLabel` explícito pasado por quien use `Input` lo siga pudiendo pisar.
+- **`StarRating` de solo lectura exponía 5 elementos sueltos (`src/components/ui/StarRating.tsx`).**
+  El rating de un lugar (Search, detalle, listas de reseñas) se renderizaba como 5 `Text`
+  independientes sin ningún rol/label — un lector de pantalla los recorría uno por uno
+  ("estrella", "estrella", "estrella"...) sin decir el valor. Cuando no hay `onChange` (el caso de
+  solo-lectura), ahora se agrupa todo en un único `View` con `accessible` +
+  `accessibilityLabel={`${value} de 5 estrellas`}` y los glifos internos marcados
+  `importantForAccessibility="no-hide-descendants"`, así un lector de pantalla lo anuncia como una
+  sola parada con el valor ya dicho. El caso editable (formulario de reseña, con `onChange`) no
+  cambió: sigue siendo 5 botones independientes, cada uno con su propio label ("1 estrella"… "5
+  estrellas"), que es lo correcto para algo que se puede tocar.
+- **`PlaceCard`: `<button>` anidado dentro de otro `<button>` en web
+  (`src/components/domain/PlaceCard.tsx`).** La tarjeta completa tenía `accessibilityRole="button"`
+  y contiene, adentro, el corazón de favoritos con su propio `accessibilityRole="button"`.
+  `react-native-web` traduce `accessibilityRole="button"` a un `<button>` real de HTML, y HTML no
+  permite un `<button>` dentro de otro — esto ya se había visto como advertencia de consola durante
+  la verificación en navegador de la Prioridad 7 ("`<button> cannot contain a nested <button>`") y
+  quedó pendiente de corregir en ese momento. Se cambió el rol de la tarjeta externa a `"link"`
+  (tocarla navega al detalle del lugar, que es semánticamente lo que es) — el corazón interno sigue
+  siendo `"button"`, y ya no hay anidamiento inválido. No hay ningún test que dependa del rol
+  `"button"` de la tarjeta (confirmado con `grep` sobre `__tests__/`), así que el cambio no rompió
+  nada.
+- **Auditoría de contraste WCAG 2.1 (`src/design-system/contrast.ts` +
+  `src/design-system/__tests__/contrast.test.ts`, nuevos).** Implementación desde cero (sin
+  dependencias) de la fórmula estándar del W3C (luminancia relativa + relación de contraste), con
+  tests que verifican cada par de color que la app realmente usa (texto principal/secundario sobre
+  fondo, texto de botones, fondo del Toast, mensajes de error, corazón de favoritos). Todos pasan
+  AA (4.5:1) salvo un hallazgo:
+  - **RIESGO DOCUMENTADO, no corregido a propósito:** `colors.rating` (el color del glifo ★ de
+    `StarRating`) sobre `colors.background` da ~2.03:1, por debajo del mínimo de 3:1 que exige WCAG
+    AA para componentes gráficos/de UI. No se cambió el color acá — es una decisión de marca/diseño
+    ("no cambies colores de forma arbitraria"), fuera del alcance de esta auditoría. El hallazgo
+    queda registrado como un test que afirma explícitamente que el contraste sigue por debajo del
+    mínimo (`toBeLessThan(3)`): si en el futuro alguien cambia `colors.rating`, ese test empieza a
+    fallar y obliga a decidir conscientemente, en vez de que el hallazgo se pierda en un documento
+    aparte.
+
+**Fuera de alcance de esta prioridad, revisado sin encontrar nada que cambiar:** el resto de los
+componentes interactivos (`Button`, `Chip`, `ConfirmDialog`, los `Pressable` de favoritos, filtros y
+navegación) ya tenían `accessibilityRole`/`accessibilityLabel` apropiados desde que se construyeron
+en fases anteriores.
+
 ## Mapas y ubicación (Fase 5)
 
 - **Cercanía en la base de datos** — `supabase/migrations/20260811120008_nearby_places.sql`

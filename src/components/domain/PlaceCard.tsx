@@ -27,7 +27,13 @@ export function PlaceCard({
   onPress,
 }: Props) {
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" testID={`place-card-${place.id}`}>
+    // Prioridad 14 (accesibilidad): "link" en vez de "button" -- semánticamente
+    // es más correcto (tocar la tarjeta navega al detalle) y evita que
+    // react-native-web renderice un <button> que contiene otro <button>
+    // (el corazón de favoritos, más abajo), HTML inválido que confundía a
+    // lectores de pantalla en web (encontrado durante la verificación de la
+    // Prioridad 7).
+    <Pressable onPress={onPress} accessibilityRole="link" testID={`place-card-${place.id}`}>
       <Card style={styles.card}>
         <View style={styles.thumbnail}>
           <Text variant="title" color="textInverse">
