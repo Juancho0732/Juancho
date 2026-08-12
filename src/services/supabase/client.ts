@@ -18,5 +18,10 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
+    // PKCE (Prioridad 5, recuperación de contraseña): el enlace de recuperación
+    // llega como ?code=... (parámetro de query normal, sirve igual en web y en
+    // el deep link nativo) en vez de un fragmento #access_token=... -- más simple
+    // de leer desde expo-router (useLocalSearchParams) y no expone tokens en la URL.
+    flowType: 'pkce',
   },
 });

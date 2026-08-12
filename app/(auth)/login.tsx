@@ -53,6 +53,12 @@ export default function LoginScreen() {
           errorMessage={errors.password?.message}
         />
 
+        <Link href="/forgot-password" style={styles.forgotPasswordLink}>
+          <Text variant="caption" color="primary">
+            ¿Olvidaste tu contraseña?
+          </Text>
+        </Link>
+
         {submitError ? (
           <Text variant="caption" color="danger">
             {submitError}
@@ -82,5 +88,8 @@ const styles = StyleSheet.create({
   link: {
     alignSelf: 'center',
     marginTop: theme.spacing.sm,
+  },
+  forgotPasswordLink: {
+    alignSelf: 'flex-end',
   },
 });

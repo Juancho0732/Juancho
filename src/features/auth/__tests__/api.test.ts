@@ -1,6 +1,9 @@
 const mockSignUp = jest.fn();
 const mockSignInWithPassword = jest.fn();
 const mockSignOut = jest.fn();
+const mockResetPasswordForEmail = jest.fn();
+const mockExchangeCodeForSession = jest.fn();
+const mockUpdateUser = jest.fn();
 
 jest.mock('@/services/supabase/client', () => ({
   supabase: {
@@ -8,12 +11,26 @@ jest.mock('@/services/supabase/client', () => ({
       signUp: (...args: unknown[]) => mockSignUp(...args),
       signInWithPassword: (...args: unknown[]) => mockSignInWithPassword(...args),
       signOut: (...args: unknown[]) => mockSignOut(...args),
+      resetPasswordForEmail: (...args: unknown[]) => mockResetPasswordForEmail(...args),
+      exchangeCodeForSession: (...args: unknown[]) => mockExchangeCodeForSession(...args),
+      updateUser: (...args: unknown[]) => mockUpdateUser(...args),
     },
   },
 }));
 
-// eslint-disable-next-line import/first -- el mock de arriba debe declararse antes de importar '../api'
-import { signIn, signOut, signUp } from '../api';
+jest.mock('expo-linking', () => ({
+  createURL: jest.fn((path: string) => `juancho://${path}`),
+}));
+
+// eslint-disable-next-line import/first -- los mocks de arriba deben declararse antes de importar '../api'
+import {
+  exchangeRecoveryCode,
+  requestPasswordReset,
+  signIn,
+  signOut,
+  signUp,
+  updatePassword,
+} from '../api';
 
 describe('signUp', () => {
   beforeEach(() => {
@@ -93,5 +110,69 @@ describe('signOut', () => {
     mockSignOut.mockResolvedValue({ error: null });
 
     await expect(signOut()).resolves.toBeUndefined();
+  });
+});
+
+describe('requestPasswordReset', () => {
+  beforeEach(() => {
+    mockResetPasswordForEmail.mockReset();
+  });
+
+  it('manda el redirectTo con el esquema propio de la app apuntando a reset-password', async () => {
+    mockResetPasswordForEmail.mockResolvedValue({ data: {}, error: null });
+
+    await requestPasswordReset({ email: 'ana@example.com' });
+
+    expect(mockResetPasswordForEmail).toHaveBeenCalledWith('ana@example.com', {
+      redirectTo: 'juancho://reset-password',
+    });
+  });
+
+  it('propaga el error de Supabase (ej. límite de solicitudes)', async () => {
+    mockResetPasswordForEmail.mockResolvedValue({ data: {}, error: new Error('email rate limit exceeded') });
+
+    await expect(requestPasswordReset({ email: 'ana@example.com' })).rejects.toThrow(
+      'email rate limit exceeded',
+    );
+  });
+});
+
+describe('exchangeRecoveryCode', () => {
+  beforeEach(() => {
+    mockExchangeCodeForSession.mockReset();
+  });
+
+  it('intercambia el code por una sesión', async () => {
+    mockExchangeCodeForSession.mockResolvedValue({ data: {}, error: null });
+
+    await exchangeRecoveryCode('abc123');
+
+    expect(mockExchangeCodeForSession).toHaveBeenCalledWith('abc123');
+  });
+
+  it('propaga el error si el code ya no es válido (expirado o ya usado)', async () => {
+    mockExchangeCodeForSession.mockResolvedValue({ data: {}, error: new Error('invalid flow state') });
+
+    await expect(exchangeRecoveryCode('abc123')).rejects.toThrow('invalid flow state');
+  });
+});
+
+describe('updatePassword', () => {
+  beforeEach(() => {
+    mockUpdateUser.mockReset();
+  });
+
+  it('llama a updateUser con la contraseña nueva', async () => {
+    mockUpdateUser.mockResolvedValue({ data: {}, error: null });
+
+    await updatePassword('nueva-contraseña-123');
+
+    expect(mockUpdateUser).toHaveBeenCalledWith({ password: 'nueva-contraseña-123' });
+  });
+
+  it('propaga el error de Supabase', async () => {
+    mockUpdateUser.mockResolvedValue({ data: {}, error: new Error('same password') });
+
+    await expect(updatePassword('nueva-contraseña-123')).rejects.toThrow('same password');
   });
 });

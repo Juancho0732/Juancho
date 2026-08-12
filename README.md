@@ -248,6 +248,47 @@ automáticamente su fila en `profiles`. Si el proyecto de Supabase tiene activad
 por correo, el registro no deja sesión iniciada de inmediato — la pantalla lo detecta y muestra
 "revisa tu correo" en vez de navegar.
 
+### Recuperación de contraseña (auditoría de beta-readiness, Prioridad 5)
+
+Flujo estándar de Supabase Auth con PKCE (`flowType: 'pkce'` en `services/supabase/client.ts`):
+el enlace de recuperación llega como `?code=...` (parámetro de query normal, igual en web y en el
+deep link nativo `juancho://reset-password?code=...`) en vez de un fragmento `#access_token=...` —
+más simple de leer desde `expo-router` (`useLocalSearchParams`) y no expone tokens en la URL ni en
+el historial del navegador/correo.
+
+- **`/login`** — nuevo enlace "¿Olvidaste tu contraseña?" hacia `/forgot-password`.
+- **`/forgot-password`** — pide el correo y llama a `requestPasswordReset` (`features/auth/api.ts`),
+  que arma el `redirectTo` con `Linking.createURL('reset-password')` (esquema propio de la app,
+  `app.config.ts`) y llama a `supabase.auth.resetPasswordForEmail`. Siempre muestra el mismo
+  mensaje de éxito ("si ese correo tiene una cuenta, te enviamos un enlace..."), sin importar si el
+  correo existe o no — `resetPasswordForEmail` de Supabase ya está diseñado para no filtrar esa
+  información, así que la UI simplemente no le agrega una diferencia que la API no tiene.
+- **`/reset-password`** — recibe el `code` por query param. Al montar, lo intercambia una única vez
+  por una sesión temporal (`exchangeRecoveryCode` → `supabase.auth.exchangeCodeForSession`). Si no
+  hay `code`, o si el intercambio falla (enlace expirado o ya usado), muestra "Enlace no válido" con
+  un link para pedir uno nuevo, en vez de un formulario que solo puede fallar. Si el intercambio
+  funciona, muestra el formulario de contraseña nueva (`resetPasswordSchema`: mínimo 8 caracteres,
+  confirmación debe coincidir) y llama a `updatePassword` (`supabase.auth.updateUser`) al enviar.
+- **`useProtectedRoute`** — la sesión temporal que deja el intercambio de código ya cuenta como
+  "signedIn" para el resto de la app; sin un caso especial, el guard de rutas expulsaría a la
+  persona de `/reset-password` hacia `/home` antes de que pudiera elegir su contraseña nueva. Se
+  agregó una excepción puntual para esa única pantalla — el resto de las reglas de acceso no cambia.
+- Ningún catch de esta pantalla expone `error.message` (Prioridad 4): usa `logAndGetSafeMessage`
+  igual que el resto de la app.
+
+**Verificación (sandbox sin GoTrue real):** el REST shim de verificación (Fases 2-8) solo simula
+`/rest/v1/*` (PostgREST), no `/auth/v1/*` — no hay un Auth Server real corriendo acá, así que el
+intercambio de código nunca puede completarse de verdad en este entorno (tampoco llega un correo
+real). Lo que sí se verificó en el navegador, contra el código real de la app (sin mockear nada de
+`features/auth`): el enlace en Login, el formulario de `forgot-password` con su validación y sus
+dos estados (éxito siempre igual, error genérico cuando la llamada de red falla), `reset-password`
+sin `code` → "Enlace no válido", `reset-password` con un `code` inventado → intenta intercambiarlo
+contra Supabase de verdad, falla (era de prueba), cae a "Enlace no válido" — confirmando que el
+manejo de errores de extremo a extremo funciona. El formulario de contraseña nueva (validación de
+mínimo 8 caracteres y de que ambas contraseñas coincidan) se verificó forzando el estado interno de
+la pantalla a "código ya intercambiado" — el único paso que de verdad no se puede probar acá es la
+llamada exitosa a `exchangeCodeForSession` en sí, porque requiere un GoTrue real respondiendo.
+
 ## Places y favoritos (Fase 4)
 
 Home, Search, Place Detail y Favorites ya consumen datos reales de Supabase (o del seed MOCK)
