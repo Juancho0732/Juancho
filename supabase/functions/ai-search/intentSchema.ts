@@ -24,14 +24,24 @@ export const EMPTY_INTENT: SearchIntent = {
   activityPreference: null,
 };
 
-/** Forma que le pedimos a la IA (tool-calling), antes de normalizar. */
+/**
+ * Forma que le pedimos a la IA (tool-calling), antes de normalizar.
+ * `category_hint`/`activity_preference` llevan un límite de longitud
+ * (Prioridad 3, auditoría de beta-readiness): son los únicos dos campos de
+ * texto libre que la IA puede rellenar con lo que quiera y que luego se
+ * reinyectan tal cual en el prompt de generateExplanation -- acotar su
+ * tamaño reduce cuánto "espacio de instrucción" le queda a un intento de
+ * inyección para colarse ahí. `location`/`occasion` no necesitan este
+ * límite porque igual se descartan por completo si no matchean una lista
+ * curada (ver normalizeLocation/normalizeOccasion abajo).
+ */
 export const rawIntentSchema = z.object({
   people: z.number().int().min(1).max(30).nullable(),
   budget_total: z.number().min(0).max(5_000_000).nullable(),
   location: z.string().nullable(),
   occasion: z.string().nullable(),
-  category_hint: z.string().nullable(),
-  activity_preference: z.string().nullable(),
+  category_hint: z.string().max(60).nullable(),
+  activity_preference: z.string().max(60).nullable(),
 });
 
 export type RawIntent = z.infer<typeof rawIntentSchema>;

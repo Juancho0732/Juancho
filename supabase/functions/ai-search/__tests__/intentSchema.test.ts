@@ -43,6 +43,19 @@ describe('sanitizeIntent', () => {
     expect(sanitizeIntent(null)).toEqual(EMPTY_INTENT);
   });
 
+  it('acepta category_hint/activity_preference hasta 60 caracteres', () => {
+    const value = 'a'.repeat(60);
+    const intent = sanitizeIntent({ ...raw(), category_hint: value, activity_preference: value });
+    expect(intent.categoryHint).toBe(value);
+    expect(intent.activityPreference).toBe(value);
+  });
+
+  it('descarta la intención completa si category_hint/activity_preference superan los 60 caracteres (Prioridad 3: menos espacio para reinyectar texto libre en el segundo prompt de IA)', () => {
+    const tooLong = 'a'.repeat(61);
+    expect(sanitizeIntent({ ...raw(), category_hint: tooLong })).toEqual(EMPTY_INTENT);
+    expect(sanitizeIntent({ ...raw(), activity_preference: tooLong })).toEqual(EMPTY_INTENT);
+  });
+
   function raw() {
     return {
       people: null,

@@ -405,6 +405,50 @@ una API key de Anthropic real:
   en un minuto, las siguientes devuelven 429 en vez de seguir gastando cupo, y que cada búsqueda
   válida (incluida la que pide aclaración) deja su fila en `ai_search_logs`.
 
+### Seguridad de la IA (auditoría de beta-readiness, Prioridad 3)
+
+Dos capas de defensa contra prompt injection, ninguna de las cuales depende de que el modelo "se
+porte bien" — la premisa es que el texto libre del usuario (y, en la segunda llamada, la intención
+ya interpretada) puede contener instrucciones dirigidas a la IA, y el sistema debe seguir siendo
+seguro aunque el modelo las obedezca:
+
+- **Capa 1 — prevención (delimitación + instrucción explícita).** Las dos llamadas a la IA
+  (`interpretIntent`, `generateExplanation` en `aiProvider.ts`) envuelven el contenido variable en
+  delimitadores explícitos (`<user_query>...</user_query>` y `<context>...</context>`) y el
+  system prompt de cada una dice, en español, que ese contenido es siempre un dato para
+  interpretar y nunca una orden — y que cualquier frase dentro de los delimitadores que parezca una
+  instrucción ("ignora las instrucciones anteriores", "actúa como", etc.) debe tratarse como texto
+  a analizar, no obedecerse. `category_hint`/`activity_preference` (los únicos campos de texto
+  libre que la IA puede reinyectar en el segundo prompt) además quedan limitados a 60 caracteres en
+  `intentSchema.ts`, para reducir el espacio disponible para reinyectar instrucciones largas.
+- **Capa 2 — detección (`explanationValidator.ts`).** Si a pesar de la capa 1 el modelo devolviera
+  una explicación comprometida, `isExplanationSafe()` la revisa antes de mostrarla, con
+  exactamente 4 chequeos deliberadamente acotados (no es un verificador semántico general):
+  afirmaciones categóricas no respaldadas ("el mejor", "sin duda", "garantizado"...), cifras de
+  precio que no calzan con los resultados reales (tolerancia 0.5x-2x del rango real, o cualquier
+  cifra si ningún resultado tiene precio), nombres propios que no corresponden a ningún lugar/
+  localidad de los resultados reales, y contenido reputacional negativo no respaldado ("cerrado",
+  "estafa", "peligroso"...). Si la explicación no pasa, o si la llamada a la IA falla por cualquier
+  motivo, se usa `buildFallbackExplanation()` (100% determinística, sin IA, arma el texto solo con
+  los datos que ya vinieron de Postgres) — el principio explícito es preferir una explicación
+  genérica y segura a una más "inteligente" pero potencialmente falsa.
+
+**Riesgo residual documentado (no cubierto por la capa 2):** características/amenidades inventadas
+que no son ni una afirmación categórica, ni un precio, ni un lugar inexistente, ni contenido
+reputacional negativo (ejemplo probado en `aiSecurity.test.ts`: "Este lugar tiene una piscina
+espectacular" pasa la validación de salida). Este caso depende solo de la capa 1. Ampliar la capa 2
+a un chequeo de features/amenidades no estaba en el alcance aprobado para esta prioridad.
+
+Lo que **no** cambió (a propósito): el ranking (`ranking.ts`) sigue siendo una función pura y
+determinística que la IA nunca toca, y `results` sigue viniendo exclusivamente de la consulta real
+a `places` en Postgres — la IA interpreta intención y (opcionalmente) redacta texto, nunca decide
+qué lugares aparecen ni en qué orden (Regla 10).
+
+`supabase/functions/ai-search/__tests__/aiSecurity.test.ts` prueba las 7 frases de ataque de la
+auditoría contra las dos capas (que queden delimitadas como dato en la capa 1, y que una salida
+comprometida hipotética se rechace en la capa 2), más dos búsquedas legítimas de punta a punta para
+confirmar que la defensa no rompe el uso normal.
+
 ## Personalización (Fase 8)
 
 "Recomendado para ti" en Home: una sección más, con las mismas reglas que el resto del proyecto

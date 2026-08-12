@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
 import { AIProviderError, AnthropicProvider, type AIProvider } from './aiProvider.ts';
+import { isExplanationSafe } from './explanationValidator.ts';
 import { buildFallbackExplanation } from './fallbackExplanation.ts';
 import { heuristicParseIntent } from './heuristicParser.ts';
 import { isIntentEmpty, sanitizeIntent } from './intentSchema.ts';
@@ -185,11 +186,19 @@ Deno.serve(async (req: Request) => {
       RESULTS_LIMIT,
     );
 
-    // --- Explicación: IA primero, resumen simple si falla ---
+    // --- Explicación: IA primero, resumen simple si falla o si no pasa la
+    // validación de salida (Prioridad 3: preferible una explicación genérica
+    // y segura a una más "inteligente" pero potencialmente falsa). ---
     let explanation: string;
     if (provider && !usedFallbackParser) {
       try {
-        explanation = await provider.generateExplanation(query, intent, results);
+        const aiExplanation = await provider.generateExplanation(query, intent, results);
+        if (isExplanationSafe(aiExplanation, results)) {
+          explanation = aiExplanation;
+        } else {
+          console.error('generateExplanation devolvió contenido que no pasó la validación de salida.');
+          explanation = buildFallbackExplanation(intent, results);
+        }
       } catch (error) {
         console.error('generateExplanation falló, usando resumen simple:', error);
         explanation = buildFallbackExplanation(intent, results);
