@@ -131,14 +131,16 @@ un build real):
 4. Sin esto, cualquiera que extraiga la key del `.apk` publicado podría usarla desde su propia app,
    consumiendo la cuota/facturación del proyecto de Google Cloud sin límite.
 
-**Bloqueante para el paso anterior, y también REQUIERE DECISIÓN DEL EQUIPO:** `app.config.ts`
-todavía no define `android.package` ni `ios.bundleIdentifier`, y no existe un `eas.json` con
-perfiles de build. Sin un `package name` definitivo no hay nada que restringir en el paso 2 de
-arriba, y tampoco se puede generar un build real (EAS Build ni `expo prebuild` lo aceptan sin
-esto). Elegir el identificador de paquete (ej. `com.juancho.app`) es una decisión de branding/
-producto — no se inventó uno acá a propósito, para no comprometer un identificador que después sea
-difícil de cambiar (una vez publicado en las tiendas, el `package name`/`bundleIdentifier` es
-prácticamente inmutable).
+**Actualizado (preparación para beta real):** `app.config.ts` ya define `android.package` /
+`ios.bundleIdentifier` como `com.example.juancho` — **placeholder explícito, no un identificador
+definitivo** (`com.example.*` es el prefijo que el propio Expo usa para "todavía sin decidir").
+Sirve para poder generar un build de prueba (confirmado con `expo prebuild` — genera proyectos
+Android/iOS válidos) y para que `eas.json` (ya existe, perfiles `development`/`preview`/
+`production`) tenga algo con qué trabajar, pero **no se puede restringir la API key de Google Maps
+contra este placeholder ni subir un build con él a las tiendas** — el identificador definitivo
+sigue siendo una decisión de branding/producto pendiente (una vez publicado, es prácticamente
+inmutable). Ver [`docs/INFRA_READINESS.md`](docs/INFRA_READINESS.md) sección 3 para el detalle
+completo y qué falta para el primer build real (login de una cuenta EAS, entre otras cosas).
 
 **CORS de la Edge Function** (`Access-Control-Allow-Origin: '*'` en
 `supabase/functions/ai-search/index.ts`) — revisado, no es un hueco: la función se autentica con un
@@ -163,8 +165,13 @@ sección "Verificación" de este README):
 - REQUIERE CONFIGURACIÓN EXTERNA — habilitar/configurar confirmación de correo y las Redirect URLs
   de recuperación de contraseña en Supabase Auth (`juancho://reset-password`, ver Prioridad 5) para
   el proyecto real.
-- REQUIERE DECISIÓN DEL EQUIPO — elegir `android.package`/`ios.bundleIdentifier`, crear `eas.json`,
-  obtener y restringir una API key de Google Maps real para ese package name (puntos anteriores).
+- REQUIERE DECISIÓN DEL EQUIPO — reemplazar el placeholder `com.example.juancho`
+  (`android.package`/`ios.bundleIdentifier`) por el identificador definitivo, y obtener/restringir
+  una API key de Google Maps real para ese package name (`eas.json` con perfiles de build ya
+  existe, no falta crearlo).
+- REQUIERE CONFIGURACIÓN EXTERNA — login de una cuenta Expo/EAS (`eas login`) y `eas init` para
+  vincular el proyecto real antes del primer `eas build` — ver
+  [`docs/INFRA_READINESS.md`](docs/INFRA_READINESS.md) sección 4.
 - REQUIERE CONFIGURACIÓN EXTERNA — decidir si el seed MOCK se carga en el proyecto de
   staging/beta (con la salvaguarda de la Prioridad 1 ya lista) o si la beta arranca sin datos
   ficticios hasta tener lugares reales importados (Prioridad 1, `import_real_places.py`).

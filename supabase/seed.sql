@@ -43,7 +43,8 @@ insert into public.categories (name, slug) values
   ('Planes con Amigos', 'planes-amigos'),
   ('Planes en Pareja', 'planes-pareja'),
   ('Experiencias y Talleres', 'experiencias-talleres'),
-  ('Deportes y Recreación', 'deportes-recreacion');
+  ('Deportes y Recreación', 'deportes-recreacion')
+on conflict (slug) do nothing;
 
 insert into auth.users (id, email, raw_user_meta_data) values
   ('11111111-1111-1111-1111-111111111101', 'dev.laura@example.test', jsonb_build_object('display_name', 'Laura')),

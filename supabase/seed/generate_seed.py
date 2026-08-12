@@ -197,9 +197,18 @@ def main() -> None:
     lines.append("")
 
     # --- Categorías ---
+    # Preparación para beta real: las categorías son taxonomía real del
+    # producto, no datos MOCK -- desde la migración
+    # 20260811120012_seed_reference_categories.sql ya se insertan ahí (con
+    # `on conflict do nothing`), así que un proyecto que solo aplica
+    # migraciones (sin este seed) también las tiene. Acá solo queda un
+    # `on conflict do nothing` de respaldo por si alguien corre este seed
+    # contra una base donde, por lo que sea, esa migración no llegó a
+    # aplicarse -- nunca debería fallar por "ya existen".
     lines.append("insert into public.categories (name, slug) values")
     lines.append(
-        ",\n".join(f"  ({sql_str(name)}, {sql_str(slug)})" for name, slug in CATEGORIES) + ";"
+        ",\n".join(f"  ({sql_str(name)}, {sql_str(slug)})" for name, slug in CATEGORIES)
+        + "\non conflict (slug) do nothing;"
     )
     lines.append("")
 
