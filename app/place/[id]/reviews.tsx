@@ -32,6 +32,7 @@ export default function PlaceReviewsScreen() {
     undefined,
   );
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const myReview = reviews?.find((review) => review.user_id === userId) ?? null;
@@ -50,8 +51,13 @@ export default function PlaceReviewsScreen() {
 
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
-    await deleteReview.mutateAsync(deleteTarget);
-    setDeleteTarget(null);
+    setDeleteError(null);
+    try {
+      await deleteReview.mutateAsync(deleteTarget);
+      setDeleteTarget(null);
+    } catch (error) {
+      setDeleteError(logAndGetSafeMessage('deleteReview', error, 'No se pudo eliminar la reseña. Intenta de nuevo.'));
+    }
   };
 
   return (
@@ -110,8 +116,13 @@ export default function PlaceReviewsScreen() {
         title="Eliminar reseña"
         message="Esta acción no se puede deshacer."
         confirmLabel="Eliminar"
+        isConfirming={deleteReview.isPending}
+        errorMessage={deleteError}
         onConfirm={handleConfirmDelete}
-        onCancel={() => setDeleteTarget(null)}
+        onCancel={() => {
+          setDeleteTarget(null);
+          setDeleteError(null);
+        }}
       />
     </Screen>
   );

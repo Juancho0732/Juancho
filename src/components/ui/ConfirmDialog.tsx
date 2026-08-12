@@ -11,6 +11,11 @@ type Props = {
   message?: string;
   confirmLabel?: string;
   cancelLabel?: string;
+  /** Prioridad 6: deshabilita ambos botones mientras la acción está en curso. */
+  isConfirming?: boolean;
+  /** Prioridad 6: si la acción falló, se muestra acá y el diálogo permanece abierto
+   * (nunca se cierra solo ni deja a la persona sin saber que falló). */
+  errorMessage?: string | null;
   onConfirm: () => void;
   onCancel: () => void;
 };
@@ -26,6 +31,8 @@ export function ConfirmDialog({
   message,
   confirmLabel = 'Confirmar',
   cancelLabel = 'Cancelar',
+  isConfirming = false,
+  errorMessage,
   onConfirm,
   onCancel,
 }: Props) {
@@ -41,12 +48,26 @@ export function ConfirmDialog({
               {message}
             </Text>
           ) : null}
+          {errorMessage ? (
+            <Text variant="caption" color="danger">
+              {errorMessage}
+            </Text>
+          ) : null}
           <View style={styles.actions}>
             <View style={styles.actionButton}>
-              <Button label={cancelLabel} variant="secondary" onPress={onCancel} />
+              <Button
+                label={cancelLabel}
+                variant="secondary"
+                onPress={onCancel}
+                disabled={isConfirming}
+              />
             </View>
             <View style={styles.actionButton}>
-              <Button label={confirmLabel} onPress={onConfirm} />
+              <Button
+                label={isConfirming ? 'Un momento…' : confirmLabel}
+                onPress={onConfirm}
+                disabled={isConfirming}
+              />
             </View>
           </View>
         </View>

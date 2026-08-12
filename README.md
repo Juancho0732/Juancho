@@ -516,6 +516,49 @@ Anthropic, mensajes de un módulo nativo) o venir en inglés en una app en espa�
 crudo (incluido un caso con un mensaje de constraint de Postgres real) y que sí registra el error
 original en consola.
 
+### Errores en mutaciones (auditoría de beta-readiness, Prioridad 6)
+
+Auditoría de todas las mutaciones de la app (`useMutation`/`mutate`/`mutateAsync`): favoritos,
+crear/editar reseña, eliminar reseña, autenticación. Dos huecos reales encontrados y corregidos —
+ninguno de los otros (login/registro/perfil/recuperación de contraseña/guardar reseña) tenía este
+problema, ya estaban bien manejados desde las Prioridades 4 y 5.
+
+- **Favoritos (`useToggleFavorite`) fallaba en silencio.** El corazón se togglea con `.mutate(...)`
+  (fire-and-forget) desde seis pantallas distintas (Home ×3 secciones, Search, Favorites,
+  Recomendaciones, Detalle) y ninguna leía el estado de error de la mutación — si la llamada
+  fallaba, el corazón simplemente no cambiaba y la persona no se enteraba de nada. Como no hay un
+  lugar natural en una tarjeta de lista para un mensaje de error inline, se agregó un toast global
+  mínimo (`src/components/ui/Toast.tsx` + `toastStore.ts`, montado una vez en `app/_layout.tsx`) y
+  un `onError` en el propio hook que llama a `useToastStore.getState().showToast(...)` con un
+  mensaje genérico (nunca `error.message`, mismo patrón que `logAndGetSafeMessage`). Al ser un solo
+  hook compartido, arregla las seis pantallas a la vez sin tocarlas. No hay estado optimista que
+  revertir: la UI solo refleja el favorito cuando la mutación realmente termina bien.
+- **Eliminar reseña (`handleConfirmDelete` en `place/[id]/reviews.tsx`) no atrapaba errores.** Era
+  un `await deleteReview.mutateAsync(...)` sin try/catch: si fallaba, la promesa quedaba rechazada
+  sin manejar, `setDeleteTarget(null)` nunca se ejecutaba y la persona se quedaba sin saber si
+  eliminar funcionó o no (solo podía cerrar el diálogo con "Cancelar", sin ninguna pista de qué
+  pasó). Se envolvió en try/catch con `logAndGetSafeMessage`, y `ConfirmDialog` ganó dos props
+  nuevas para este caso: `isConfirming` (deshabilita ambos botones y cambia la etiqueta mientras la
+  eliminación está en curso) y `errorMessage` (si falla, el diálogo se queda abierto mostrando el
+  motivo en vez de cerrarse solo o desaparecer sin explicación).
+
+Ningún otro `useMutation` de la app (`useUpsertReview`) tenía este problema: ya se llamaba con
+`mutateAsync` dentro de un try/catch que mostraba el error (Prioridad 4).
+
+`src/components/ui/__tests__/Toast.test.tsx`, `ConfirmDialog.test.tsx` y
+`src/features/favorites/__tests__/useToggleFavorite.test.tsx` (nuevos) cubren los tres casos:
+mensaje mostrado y auto-ocultado, diálogo deshabilitado/con error, y que un fallo real de
+`addFavorite`/`removeFavorite` termina en un toast genérico, no en un error silencioso.
+
+**Verificación visual pendiente (documentado, no maquillado):** este cambio no se pudo probar en
+vivo en el navegador de este sandbox. Los flujos de favoritos/reseñas requieren una sesión
+autenticada real dentro de `supabase-js` (no solo en el store de la app) para que las llamadas a
+`supabase.from(...)` lleven el `Authorization` correcto — y `supabase.auth.setSession()` exige un
+`access_token` con forma de JWT válido y decodificable, cosa que este entorno no puede generar sin
+un GoTrue real (a diferencia de fases anteriores, donde alcanzaba con leer datos públicos o forzar
+el `Authorization` crudo contra el REST shim). La lógica quedó cubierta con tests de componente/hook
+en su lugar; falta la confirmación visual de extremo a extremo contra un proyecto Supabase real.
+
 ## Personalización (Fase 8)
 
 "Recomendado para ti" en Home: una sección más, con las mismas reglas que el resto del proyecto

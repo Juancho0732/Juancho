@@ -3,6 +3,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { Toast } from '@/components/ui';
 import { useAuthStore, useInitAuth, useProtectedRoute } from '@/features/auth';
 import { queryClient } from '@/services/query-client';
 
@@ -30,6 +31,7 @@ export default function RootLayout() {
       <QueryClientProvider client={queryClient}>
         <StatusBar style="dark" />
         <NavigationGate />
+        <Toast />
       </QueryClientProvider>
     </SafeAreaProvider>
   );
