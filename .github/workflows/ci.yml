@@ -1,0 +1,95 @@
+name: CI
+
+# Auditoría de beta-readiness, Prioridad 10. Corre en cada push y cada pull
+# request, sin excepción de rama -- "cada push/PR" tal como lo pidió la
+# auditoría, no solo main/master (todavía no existe una rama "main" en este
+# repo al momento de escribir esto).
+on:
+  push:
+  pull_request:
+
+jobs:
+  lint-typecheck-test:
+    name: Lint, typecheck y tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: TypeScript (tsc --noEmit)
+        run: npm run typecheck
+
+      - name: Jest
+        run: npm test -- --ci
+
+  migrations-and-seed:
+    name: Migraciones + seed MOCK contra Postgres real
+    runs-on: ubuntu-latest
+    # Esto SÍ es una prueba real, no decorativa: si una migración tiene un
+    # error de sintaxis, o si un CHECK constraint nuevo (Prioridades 1 y 8)
+    # rechaza datos que el propio seed genera, este job falla. Ya habría
+    # detectado, por ejemplo, una migración que se aplica pero deja el seed
+    # roto.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: juancho_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Aplicar 00_local_stub.sql (simula auth.* de Supabase en Postgres plano)
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d juancho_ci -v ON_ERROR_STOP=1 -f supabase/tests/00_local_stub.sql
+
+      - name: Aplicar todas las migraciones en orden
+        env:
+          PGPASSWORD: postgres
+        run: |
+          for f in supabase/migrations/*.sql; do
+            echo "-- aplicando $f"
+            psql -h localhost -U postgres -d juancho_ci -v ON_ERROR_STOP=1 -f "$f"
+          done
+
+      - name: Cargar el seed MOCK completo
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d juancho_ci -v ON_ERROR_STOP=1 <<'SQL'
+          SET myapp.confirm_mock_seed = 'si-quiero-cargar-datos-ficticios';
+          \i supabase/seed.sql
+          SQL
+
+      - name: RLS smoke test (informativo, no bloqueante -- ver nota abajo)
+        if: always()
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d juancho_ci -f supabase/tests/rls_smoke_test.sql
+        # supabase/tests/rls_smoke_test.sql corre a propósito con
+        # `\set ON_ERROR_STOP off`: varios de sus escenarios ESPERAN un error
+        # de Postgres (ej. "RLS bloquea esto", "el CHECK rechaza este valor")
+        # y lo dejan como parte normal de la salida para que una persona lo
+        # revise a simple vista -- no está escrito como asserts con
+        # pass/fail real. Correrlo acá deja su salida completa en el log de
+        # cada corrida de CI (visibilidad automática en cada push/PR, útil
+        # para notar un cambio de comportamiento entre commits), pero el
+        # step nunca falla el job por sí solo, así que NO reemplaza revisar
+        # esa salida a mano antes de un deploy real contra Supabase.

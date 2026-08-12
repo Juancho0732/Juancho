@@ -756,6 +756,52 @@ sembrado en la Fase 2 — incluyendo los endpoints RPC y `upsert`. En Fase 6 se 
 completo crear → editar → eliminar una reseña, confirmando que el rating cacheado del lugar se
 actualiza en pantalla en cada paso y que el diálogo de confirmación de borrado funciona en web.
 
+### CI (auditoría de beta-readiness, Prioridad 10)
+
+`.github/workflows/ci.yml` corre en cada push y cada pull request (sin restringir a una rama —
+todavía no existe `main` en este repo), con dos jobs independientes:
+
+- **`lint-typecheck-test`** — `npm ci`, `npm run lint` (ESLint), `npm run typecheck` (`tsc
+  --noEmit`) y `npm test` (Jest). Real y bloqueante: cualquiera de los tres falla el job.
+- **`migrations-and-seed`** — levanta un `postgres:16` como servicio, aplica
+  `supabase/tests/00_local_stub.sql` (simula `auth.*`/roles de Supabase en Postgres plano) y las
+  migraciones en orden, y carga el seed MOCK completo — todo con `ON_ERROR_STOP=1`. También es
+  real y bloqueante: si una migración tiene un error, o si un `CHECK` constraint nuevo (como los de
+  las Prioridades 1 y 8) rechaza algo que el propio seed genera, este job falla. De hecho ya sirvió
+  de verificación para esta misma prioridad: al escribir el workflow se probaron a mano los mismos
+  comandos contra un Postgres local con auth por contraseña (para imitar el servicio de CI) antes
+  de confiar en que funcionaran.
+
+**Qué queda fuera de la ejecución automática, y por qué (para no simular una CI que no prueba
+nada):**
+
+- **`rls_smoke_test.sql` sí corre dentro del job `migrations-and-seed`, pero solo de forma
+  informativa** — su salida completa queda en el log de cada corrida, pero el step nunca falla el
+  job. El archivo usa `\set ON_ERROR_STOP off` a propósito: varios de sus 24 escenarios *esperan*
+  un error de Postgres como resultado correcto (ej. "RLS debe bloquear esto"), pensado para que una
+  persona lo revise a simple vista, no como asserts con pass/fail real. Convertirlo en algo
+  auto-verificable exigiría reescribirlo con bloques `BEGIN/EXCEPTION` tipo pgTAP — fuera del
+  alcance de esta prioridad, y sigue siendo necesario revisarlo a mano antes de un deploy real.
+- **Nada que dependa de una API key de IA real, de GoTrue/Auth real, o de un proyecto Supabase
+  real** — no hay forma de correr esto en CI sin secretos reales pagos, y no corresponde inventar
+  una simulación que parezca cubrir la IA sin probarla de verdad. `supabase/functions/ai-search/`
+  sí tiene cobertura real en el job de Jest (todos sus módulos puros: `heuristicParser`, `ranking`,
+  `rateLimiter`, `explanationValidator`, `aiSecurity`, etc.) — lo que no se puede probar en CI es
+  la Edge Function corriendo de verdad en Deno contra Anthropic.
+- **Los recorridos de Playwright contra el navegador** (mencionados arriba, en cada fase con UI) se
+  hicieron a mano con herramientas fuera del repo durante el desarrollo — no están automatizados en
+  CI. Automatizarlos exigiría además un backend real corriendo (Supabase o el REST shim) dentro del
+  runner de CI, que es una inversión mayor a la pedida para esta prioridad.
+
+**Bug real encontrado y corregido al construir esta prioridad:** `package-lock.json` tenía una
+entrada transitiva faltante (`json-schema-traverse@0.4.1`, requerida por una versión resuelta de
+`ajv` que a su vez no cumplía el rango que pedía `@hookform/resolvers`) — `npm ci` fallaba con eso,
+lo que habría roto el job de CI antes de llegar siquiera a correr un test. No era un problema nuevo:
+ya estaba en el `package-lock.json` commiteado, heredado de fases anteriores; una `npm ci` real
+(la que hace CI, no `npm install`) lo habría revelado en cualquier momento. Se corrigió con
+`npm install` (repara el lock file, no cambia ningún rango de versión en `package.json`) y se
+verificó que `npm ci` y la suite completa (Jest/tsc/eslint) siguen funcionando igual después.
+
 ## Próximos pasos
 
 Con las Fases 0 a 8 completas, el MVP descrito en `docs/00-fase0-analisis.md` está implementado
