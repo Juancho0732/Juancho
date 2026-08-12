@@ -6,14 +6,74 @@ Auditoría técnica de todo lo que el repositorio necesita para conectarse a inf
 con la parte de **infraestructura/configuración**: qué puede prepararse desde el código y qué
 requiere una acción humana fuera de este repositorio.
 
-**No hay ningún proyecto Supabase real ni cuenta EAS conectados a este entorno** — se verificó
-explícitamente (sin `supabase` CLI instalado, sin `config.toml`, sin credenciales en el entorno,
-`eas whoami` devuelve "Not logged in"). Todo lo de este documento se preparó y verificó contra
-Postgres local + Postgres real (una base nueva por prueba, nunca reutilizada) y contra el propio
-`eas-cli`/`expo` en modo local — nunca contra un servicio de Supabase o Expo/EAS hospedado.
+**Actualización — ya existe un proyecto Supabase real y está conectado.** El equipo creó un
+proyecto Supabase real y compartió las credenciales necesarias (Personal Access Token). Desde acá
+se aplicaron las 13 migraciones, se desplegó la Edge Function `ai-search`, se configuró el
+Redirect URL de recuperación de contraseña, y se corrió una batería de pruebas reales (RLS, Auth,
+RPCs, Edge Function) contra ese proyecto — ver sección "0. Estado de la conexión real" abajo para
+el detalle completo y la evidencia. **Sigue sin haber ninguna cuenta EAS conectada** — `eas whoami`
+sigue devolviendo "Not logged in", nada de la sección 3/4 cambió.
 
 Etiquetas: **HECHO**, **PENDIENTE**, **REQUIERE CONFIGURACIÓN EXTERNA**, **REQUIERE DECISIÓN
 HUMANA**.
+
+---
+
+## 0. Estado de la conexión real con Supabase (actualizado)
+
+**HECHO — verificado de punta a punta contra el proyecto real, no simulado:**
+
+- **Conexión:** vía Personal Access Token de Supabase (Management API) — el CLI de `supabase` no
+  se pudo usar en este entorno (su cliente HTTP en Go no respeta el proxy saliente del sandbox,
+  falla con `Transport error` incluso con el token correcto; confirmado que no es un problema del
+  token, ya que llamadas directas por HTTPS a la misma API funcionan sin problema). Todo lo de esta
+  sección se hizo con llamadas HTTPS directas a la Management API de Supabase.
+- **Estado del proyecto antes de tocar nada:** verificado vacío (0 tablas en `public`, 0 usuarios)
+  antes de aplicar ninguna migración — confirmado con consultas de solo lectura antes de escribir
+  nada, como se había prometido.
+- **13 migraciones aplicadas**, en orden, una por una, confirmando éxito antes de seguir con la
+  siguiente. Verificado después: 7 tablas creadas, RLS habilitado en las 7, las 2 funciones RPC
+  (`nearby_places`, `personalized_places`), los 7 `CHECK` constraints, y las 10 categorías reales
+  insertadas (0 lugares, 0 usuarios — el estado correcto de un proyecto recién migrado).
+- **Edge Function `ai-search` desplegada** (multipart upload directo a la Management API,
+  `/v1/projects/{ref}/functions/deploy` — el mismo mecanismo que usa el CLI internamente).
+  Confirmada `ACTIVE` y respondiendo.
+- **Auth: `juancho://reset-password` agregado al `uri_allow_list`** — leído el config completo
+  primero (solo lectura), cambiado solo ese campo, confirmado que nada más se movió (`site_url`,
+  `disable_signup`, `mailer_autoconfirm`, etc. quedaron exactamente igual que antes).
+- **Pruebas reales, con datos 100% desechables creados y borrados en la misma sesión:**
+  - Se crearon 2 usuarios de prueba vía el Auth Admin API (`*@example.invalid`, dominio reservado
+    para pruebas por RFC 2606 — nunca entrega correo a nadie real), confirmados directamente sin
+    depender de un correo real.
+  - **Login real de punta a punta funcionó** — exactamente el punto que había quedado PENDIENTE en
+    `BETA_READINESS_FINAL.md` por no poder simularse sin un backend real. Ya no es un pendiente.
+  - Trigger `handle_new_user`: confirmado, crea el `profile` automáticamente.
+  - RLS de `favorites`: usuario A crea su propio favorito (éxito), intenta crear uno a nombre de
+    usuario B -- suplantación -- (bloqueado, `403`), usuario B intenta leer los favoritos de A (ve
+    0 filas, sin error). Los 3 casos se comportaron exactamente como debían.
+  - `CHECK` constraints de `reviews`: comentario de 501 caracteres rechazado, `occasion` inválida
+    rechazada, reseña válida aceptada — y el trigger de `rating_avg`/`review_count` recalculó
+    correctamente (5.00 / 1).
+  - RPC `nearby_places`: encontró el lugar de prueba a distancia 0. RPC `personalized_places`:
+    devolvió vacío -- **verificado que es el comportamiento correcto**, no un bug: la función
+    excluye a propósito los lugares que el usuario ya marcó como favoritos, y el único lugar que
+    existía era justamente ese.
+  - `ai-search` con un usuario real autenticado: respondió `200 ok`, usó el parser heurístico (no
+    hay `AI_API_KEY` configurada todavía -- comportamiento esperado, no un error) y encontró/rankeó
+    el lugar de prueba correctamente. Con la cabecera de autenticación ausente, la plataforma la
+    rechaza antes de llegar al código (`401`); con la anon key (sin sesión real), el código propio
+    la rechaza igual (`401 No autenticado`) -- las dos capas de protección funcionan.
+  - **Limpieza confirmada:** se borró el lugar de prueba (cascada a favoritos/reseñas), los
+    `ai_search_logs` de prueba, y los 2 usuarios (cascada a sus perfiles). Verificación final:
+    `0` usuarios, `0` lugares, `0` favoritos, `0` reseñas, `0` logs de IA, `10` categorías (las
+    reales, sin cambios) -- el proyecto queda exactamente como debe quedar antes de una beta real.
+
+**PENDIENTE — bloqueante para que `ai-search` funcione con IA real (no heurística):**
+- `AI_API_KEY` (y confirmar `AI_MODEL`) -- no se puede inventar, tiene que venir del equipo. Sin
+  ella, la función sigue funcionando (fallback heurístico, por diseño), pero no usa IA real.
+
+**No se tocó:** `supabase/seed.sql` (datos MOCK) nunca se ejecutó contra este proyecto, tal como se
+pidió explícitamente.
 
 ---
 

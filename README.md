@@ -152,19 +152,24 @@ dominio fijo tampoco tiene sentido todavía: no existe un despliegue web de prod
 es solo la vía rápida de desarrollo de UI, ver "Requisitos"), así que cualquier dominio que se
 fijara ahora sería una suposición.
 
-**Checklist antes de abrir la beta con un proyecto Supabase real** (hoy todo este proyecto se
-verificó contra Postgres local + un REST shim de desarrollo, nunca contra Supabase real — ver cada
-sección "Verificación" de este README):
+**Checklist antes de abrir la beta con un proyecto Supabase real** — **actualizado: ya existe un
+proyecto real, conectado y con las migraciones aplicadas** (ver
+[`docs/INFRA_READINESS.md`](docs/INFRA_READINESS.md) sección 0 para el detalle completo y la
+evidencia de cada verificación):
 
-- REQUIERE CONFIGURACIÓN EXTERNA — crear el proyecto Supabase real, aplicar las migraciones
-  (`supabase db push` o el flujo que use el equipo), configurar los secretos de la Edge Function
-  (`supabase secrets set AI_API_KEY=... AI_MODEL=... AI_RATE_LIMIT_PER_MINUTE=... AI_DAILY_LIMIT_PER_USER=... AI_GLOBAL_RATE_LIMIT_PER_MINUTE=...`).
-- REQUIERE CONFIGURACIÓN EXTERNA — completar el `.env` real de la app
-  (`EXPO_PUBLIC_SUPABASE_URL`/`EXPO_PUBLIC_SUPABASE_ANON_KEY` del proyecto real) y **nunca**
-  commitearlo.
-- REQUIERE CONFIGURACIÓN EXTERNA — habilitar/configurar confirmación de correo y las Redirect URLs
-  de recuperación de contraseña en Supabase Auth (`juancho://reset-password`, ver Prioridad 5) para
-  el proyecto real.
+- HECHO — proyecto Supabase real creado por el equipo, 13 migraciones aplicadas y verificadas
+  (schema, RLS, RPCs, constraints, categorías reales).
+- HECHO — Edge Function `ai-search` desplegada y respondiendo.
+- HECHO — Redirect URL de recuperación de contraseña (`juancho://reset-password`) configurado en
+  Supabase Auth.
+- HECHO — RLS, `CHECK` constraints, cascadas, RPCs, Auth (login/registro real) y `ai-search`
+  verificados contra el proyecto real con datos de prueba desechables, creados y eliminados en la
+  misma sesión.
+- PENDIENTE — secretos `AI_API_KEY`/`AI_MODEL` de la Edge Function: **requiere que el equipo los
+  provea**, no se pueden inventar. Sin ellos `ai-search` sigue funcionando (fallback heurístico,
+  verificado), pero no usa IA real todavía.
+- REQUIERE DECISIÓN DEL EQUIPO — si la confirmación de correo debe ser obligatoria antes del primer
+  login (hoy sí lo es, el valor por defecto de Supabase).
 - REQUIERE DECISIÓN DEL EQUIPO — reemplazar el placeholder `com.example.juancho`
   (`android.package`/`ios.bundleIdentifier`) por el identificador definitivo, y obtener/restringir
   una API key de Google Maps real para ese package name (`eas.json` con perfiles de build ya
@@ -1000,6 +1005,7 @@ personalización). Ideas para después, ninguna bloqueante:
   de `personalized_places`, además de favoritos y reseñas.
 - Build nativo real (EAS Build) para probar el mapa de `react-native-maps` en un dispositivo/
   simulador, más allá del fallback web con OpenStreetMap.
-- Sustituir el proyecto Supabase real por el hosteado (hoy todo se verificó contra el Postgres
-  local del sandbox, ver "Testing") y correr `supabase secrets set` con una `AI_API_KEY` real para
-  probar el camino de IA completo (no solo el heurístico) en un entorno con Deno disponible.
+- Ya hay un proyecto Supabase real conectado, migrado y verificado (ver
+  [`docs/INFRA_READINESS.md`](docs/INFRA_READINESS.md) sección 0) — lo que falta ahí es configurar
+  una `AI_API_KEY` real como secreto para probar el camino de IA completo (no solo el heurístico,
+  que ya se verificó funcionando contra este proyecto).

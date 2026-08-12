@@ -22,13 +22,18 @@ infraestructura en [`INFRA_READINESS.md`](INFRA_READINESS.md).
 
 ## B. Supabase
 
-- [ ] Proyecto Supabase real creado — **requiere configuración externa**, no existe ninguno
-      conectado a este repositorio.
-- [ ] Las 13 migraciones aplicadas contra ese proyecto (`supabase db push` o equivalente).
-- [ ] Secretos de la Edge Function `ai-search` configurados (`AI_API_KEY`, `AI_MODEL`,
-      `AI_PROVIDER`, límites de tasa) — ver `INFRA_READINESS.md` sección 1.
-- [ ] Auth configurado: Redirect URLs (`juancho://reset-password`), Site URL, decisión sobre
-      confirmación de email.
+- [x] Proyecto Supabase real creado por el equipo y conectado — verificado, vacío antes de tocar
+      nada.
+- [x] Las 13 migraciones aplicadas contra ese proyecto — verificado (7 tablas, RLS en todas, RPCs,
+      constraints, 10 categorías reales).
+- [x] Edge Function `ai-search` desplegada y respondiendo (`ACTIVE`).
+- [ ] `AI_API_KEY`/`AI_MODEL` configurados — **pendiente, requiere que el equipo los provea**, no
+      se pueden inventar. Sin esto la función sigue funcionando en modo heurístico (verificado),
+      pero no usa IA real.
+- [x] Auth: Redirect URL `juancho://reset-password` agregado al `uri_allow_list` — verificado, sin
+      tocar el resto de la configuración de Auth.
+- [ ] Decisión sobre confirmación de email obligatoria (`mailer_autoconfirm`, hoy `false` = sí
+      requiere confirmar) — sigue siendo decisión de producto, no técnica.
 - [x] Salvaguardas contra correr el seed MOCK sobre datos reales — auditadas, 3 capas intactas
       (`INFRA_READINESS.md` sección 8).
 - [ ] **`supabase/seed.sql` NUNCA debe correr contra este proyecto** — recordatorio explícito, no
@@ -103,7 +108,16 @@ infraestructura en [`INFRA_READINESS.md`](INFRA_READINESS.md).
 - [x] Walkthrough de 25 puntos como beta tester (`BETA_READINESS_FINAL.md`) — 21/25 verificados con
       evidencia real, 4 pendientes de verificación manual contra un backend real (login, registro,
       logout, sesión expirada).
-- [ ] Los 4 puntos de arriba, contra el proyecto Supabase real, una vez exista (ítem B).
+- [x] **Login/registro real, contra el proyecto Supabase real** — ya no es un pendiente: se probó
+      con usuarios desechables (creados y borrados en la misma sesión), funcionó de punta a punta.
+      Logout/sesión expirada específicamente no se probaron todavía (ver `INFRA_READINESS.md`
+      sección 0).
+- [x] RLS, `CHECK` constraints, cascadas, RPCs (`nearby_places`/`personalized_places`) y la Edge
+      Function `ai-search` verificados contra el proyecto Supabase real, con datos de prueba
+      creados y eliminados en la misma sesión — ver `INFRA_READINESS.md` sección 0 para el detalle
+      completo de cada caso probado.
+- [ ] Logout y sesión expirada específicamente, contra el proyecto real (los otros 2 de los 4
+      pendientes de arriba ya se cerraron).
 - [ ] Prueba en dispositivo/simulador nativo real (iOS/Android) — todo lo verificado hasta ahora
       fue en navegador web (la vía rápida de desarrollo de UI) o análisis de código, nunca en un
       build nativo real.

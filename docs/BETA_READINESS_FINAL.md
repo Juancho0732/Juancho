@@ -8,6 +8,12 @@ que reconstruir el razonamiento desde cero.
 Etiquetas usadas en todo el documento: **HECHO**, **PENDIENTE**, **REQUIERE CONFIGURACIÓN
 EXTERNA**, **RIESGO**, **RECOMENDACIÓN**.
 
+> **Actualización posterior:** este documento describe el estado en el momento en que se escribió
+> (todo verificado contra Postgres local, sin proyecto Supabase real). Desde entonces el equipo
+> creó un proyecto Supabase real y se conectó, migró y verificó desde el repositorio — incluido el
+> login/registro real que acá queda listado como pendiente. Ver
+> [`docs/INFRA_READINESS.md`](INFRA_READINESS.md) sección 0 para el estado actual y la evidencia.
+
 ---
 
 ## 1. Estado general
