@@ -1,6 +1,6 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { FlatList, StyleSheet, View } from 'react-native';
 
 import { ReviewListItem } from '@/components/domain';
 import { Button, ConfirmDialog, QueryState, Screen, StarRating, Text } from '@/components/ui';
@@ -88,17 +88,20 @@ export default function PlaceReviewsScreen() {
           isEmpty={(reviews?.length ?? 0) === 0}
           emptyMessage="Todavía no hay reseñas. ¡Sé la primera persona en dejar una!"
         >
-          <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
-            {(reviews ?? []).map((review) => (
+          <FlatList
+            data={reviews ?? []}
+            keyExtractor={(review: ReviewWithAuthor) => review.id}
+            contentContainerStyle={styles.list}
+            showsVerticalScrollIndicator={false}
+            renderItem={({ item: review }) => (
               <ReviewListItem
-                key={review.id}
                 review={review}
                 isOwn={review.user_id === userId}
                 onEdit={() => setEditingReview(review)}
                 onDelete={() => setDeleteTarget(review.id)}
               />
-            ))}
-          </ScrollView>
+            )}
+          />
         </QueryState>
       </View>
 

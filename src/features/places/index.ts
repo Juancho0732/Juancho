@@ -5,3 +5,4 @@ export { useNearbyPlaces } from './useNearbyPlaces';
 export { usePersonalizedPlaces } from './usePersonalizedPlaces';
 export { usePlace, usePlaceImages } from './usePlace';
 export { usePlaces } from './usePlaces';
+export { PLACES_PAGE_SIZE, usePlacesInfinite } from './usePlacesInfinite';

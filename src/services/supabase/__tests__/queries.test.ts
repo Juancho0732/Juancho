@@ -22,6 +22,7 @@ function createQueryBuilder(result: { data: unknown; error: unknown }) {
     or: chain('or'),
     order: chain('order'),
     limit: chain('limit'),
+    range: chain('range'),
     insert: chain('insert'),
     delete: chain('delete'),
     upsert: chain('upsert'),
@@ -72,7 +73,7 @@ describe('listPlaces', () => {
     expect(mockFrom).toHaveBeenCalledWith('places');
     expect(calls).toContainEqual({ method: 'eq', args: ['status', 'active'] });
     expect(calls).toContainEqual({ method: 'order', args: ['rating_avg', { ascending: false }] });
-    expect(calls).toContainEqual({ method: 'limit', args: [30] });
+    expect(calls).toContainEqual({ method: 'range', args: [0, 29] });
   });
 
   it('aplica locality, categoryId, maxPrice y minRating cuando se pasan', async () => {
@@ -91,7 +92,29 @@ describe('listPlaces', () => {
     expect(calls).toContainEqual({ method: 'eq', args: ['category_id', 'cat-1'] });
     expect(calls).toContainEqual({ method: 'lte', args: ['price_min', 60000] });
     expect(calls).toContainEqual({ method: 'gte', args: ['rating_avg', 4] });
-    expect(calls).toContainEqual({ method: 'limit', args: [5] });
+    expect(calls).toContainEqual({ method: 'range', args: [0, 4] });
+  });
+
+  it('Prioridad 7: usa offset para pedir la página siguiente sin repetir resultados', async () => {
+    const { builder, calls } = createQueryBuilder({ data: [], error: null });
+    mockFrom.mockReturnValue(builder);
+
+    await listPlaces({ limit: 20, offset: 40 });
+
+    expect(calls).toContainEqual({ method: 'range', args: [40, 59] });
+  });
+
+  it('Prioridad 7: desempata por id -- rating_avg solo no es único, así que sin esto la paginación puede repetir/saltar lugares', async () => {
+    const { builder, calls } = createQueryBuilder({ data: [], error: null });
+    mockFrom.mockReturnValue(builder);
+
+    await listPlaces();
+
+    const orderCalls = calls.filter((call) => call.method === 'order');
+    expect(orderCalls).toEqual([
+      { method: 'order', args: ['rating_avg', { ascending: false }] },
+      { method: 'order', args: ['id', { ascending: true }] },
+    ]);
   });
 
   it('busca por nombre y descripción con el término saneado', async () => {
@@ -247,6 +270,15 @@ describe('reviews', () => {
     expect(calls).toContainEqual({ method: 'eq', args: ['place_id', 'place-1'] });
     expect(calls).toContainEqual({ method: 'order', args: ['created_at', { ascending: false }] });
     expect(result[0]?.profiles?.display_name).toBe('Ana');
+  });
+
+  it('Prioridad 7: limita las reseñas traídas (un lugar popular no debe traerlas todas de una)', async () => {
+    const { builder, calls } = createQueryBuilder({ data: [], error: null });
+    mockFrom.mockReturnValue(builder);
+
+    await listReviewsForPlace('place-1');
+
+    expect(calls).toContainEqual({ method: 'limit', args: [200] });
   });
 
   it('upsertReview usa onConflict place_id,user_id para poder editar', async () => {

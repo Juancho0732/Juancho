@@ -1,13 +1,14 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { FlatList, StyleSheet, View } from 'react-native';
 
 import { PlaceCard } from '@/components/domain';
 import { Button, Input, QueryState, Screen, Text } from '@/components/ui';
 import { theme } from '@/design-system/theme';
 import { useFavoriteIds, useToggleFavorite } from '@/features/favorites';
-import { FiltersSheet, useCategories, usePlaces, type PlaceFilters } from '@/features/places';
+import { FiltersSheet, useCategories, usePlacesInfinite, type PlaceFilters } from '@/features/places';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import type { Place } from '@/types/database';
 
 export default function SearchScreen() {
   const params = useLocalSearchParams<{ categoryId?: string }>();
@@ -20,21 +21,24 @@ export default function SearchScreen() {
   const debouncedQuery = useDebouncedValue(query);
   const { data: categories } = useCategories();
   const {
-    data: places,
+    data,
     isLoading,
     isError,
     refetch,
-  } = usePlaces({
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = usePlacesInfinite({
     search: debouncedQuery,
     locality: filters.locality,
     categoryId: filters.categoryId,
     maxPrice: filters.maxPrice,
     minRating: filters.minRating,
-    limit: 30,
   });
   const { data: favoriteIds } = useFavoriteIds();
   const toggleFavorite = useToggleFavorite();
 
+  const places = useMemo(() => data?.pages.flat() ?? [], [data]);
   const favoriteIdSet = useMemo(() => new Set(favoriteIds ?? []), [favoriteIds]);
   const categoryNameById = useMemo(
     () => new Map((categories ?? []).map((category) => [category.id, category.name])),
@@ -65,14 +69,28 @@ export default function SearchScreen() {
           isLoading={isLoading}
           isError={isError}
           onRetry={refetch}
-          isEmpty={(places?.length ?? 0) === 0}
+          isEmpty={places.length === 0}
           emptyMessage="No encontramos lugares con esos criterios. Prueba ajustando la búsqueda o los filtros."
           loadingMessage="Buscando…"
         >
-          <ScrollView contentContainerStyle={styles.results} showsVerticalScrollIndicator={false}>
-            {(places ?? []).map((place) => (
+          <FlatList
+            data={places}
+            keyExtractor={(place: Place) => place.id}
+            contentContainerStyle={styles.results}
+            showsVerticalScrollIndicator={false}
+            onEndReachedThreshold={0.4}
+            onEndReached={() => {
+              if (hasNextPage && !isFetchingNextPage) fetchNextPage();
+            }}
+            ListFooterComponent={
+              isFetchingNextPage ? (
+                <Text variant="caption" color="textSecondary" style={styles.footerText}>
+                  Cargando más lugares…
+                </Text>
+              ) : null
+            }
+            renderItem={({ item: place }) => (
               <PlaceCard
-                key={place.id}
                 place={place}
                 categoryName={place.category_id ? categoryNameById.get(place.category_id) : undefined}
                 isFavorite={favoriteIdSet.has(place.id)}
@@ -81,8 +99,8 @@ export default function SearchScreen() {
                 }
                 onPress={() => router.push({ pathname: '/place/[id]', params: { id: place.id } })}
               />
-            ))}
-          </ScrollView>
+            )}
+          />
         </QueryState>
       </View>
 
@@ -112,5 +130,9 @@ const styles = StyleSheet.create({
   results: {
     gap: theme.spacing.sm,
     paddingBottom: theme.spacing.xl,
+  },
+  footerText: {
+    textAlign: 'center',
+    paddingVertical: theme.spacing.md,
   },
 });

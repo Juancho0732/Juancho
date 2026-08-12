@@ -304,14 +304,67 @@ en vez de placeholders:
   que quedó aprobada en la Fase 0.
 - **Place Detail** — datos reales de `places` + `place_images`, tags, horario, rating, botón de
   favorito, mapa (Fase 5) y enlace a las reseñas (Fase 6).
-- **Favoritos** — `listFavoritePlaces` (join `favorites` → `places`) y toggle optimista vía
-  `useToggleFavorite`, invalidando la caché de React Query.
+- **Favoritos** — `listFavoritePlaces` (join `favorites` → `places`) y toggle vía
+  `useToggleFavorite`, invalidando la caché de React Query al terminar (no es optimista: la
+  corrección de esa descripción y el resto del manejo de errores de esta mutación están en la
+  sección de Prioridad 6, más abajo).
 
 **Simplificación deliberada, no en la lista original de filtros:** "número de personas" no quedó
 como filtro de `Search`, porque no hay una columna de capacidad en `places` — es un parámetro de
 *intención* de búsqueda (para la IA de la Fase 7), no un atributo del lugar. Igual con "distancia":
 depende de la ubicación del usuario (Fase 5), así que el filtro de zona (localidad) cubre ese caso
 por ahora.
+
+### Paginación y escalabilidad (auditoría de beta-readiness, Prioridad 7)
+
+Antes de esta prioridad, Search traía como máximo 30 lugares (`listPlaces({ limit: 30 })`) sin
+forma de ver el resto, y tanto Search como Favoritos y Reseñas renderizaban toda la lista con
+`ScrollView` + `.map()` — funciona con 72 lugares MOCK, pero no escala a cientos/miles.
+
+- **Search** — `usePlacesInfinite` (`src/features/places/usePlacesInfinite.ts`) usa
+  `useInfiniteQuery` de React Query: cada página trae `PLACES_PAGE_SIZE` (20) lugares, y al llegar
+  cerca del final de la lista (`FlatList` + `onEndReached`) se pide la siguiente. `listPlaces`
+  ahora acepta `offset` y usa `.range(offset, offset + limit - 1)` en vez de `.limit()` a secas.
+  `getNextPageParam` decide que no hay más páginas cuando la última trajo menos de una página
+  completa — evita una consulta de conteo aparte solo para saber si "hay más".
+- **Favoritos** — se cambió `ScrollView`+`.map()` por `FlatList` (virtualización) sin agregar
+  paginación completa: a diferencia del catálogo de lugares, los favoritos están acotados por el
+  propio comportamiento de la persona (los que ella misma guardó), no por el tamaño del catálogo.
+- **Reseñas** — `listReviewsForPlace` ahora tiene un límite defensivo (200) y su pantalla también
+  pasó a `FlatList`. No es paginación completa (no hace falta todavía: reseñas por lugar es una
+  escala mucho menor que el catálogo completo de lugares), pero evita que un lugar muy popular
+  algún día traiga miles de reseñas de una sola vez.
+- **Home** — sin cambios a propósito: sus secciones ("Lugares populares", "Cerca de ti",
+  "Recomendado para ti") ya eran listas cortas y acotadas a propósito (10/10/6, un dashboard con
+  vistas previas, no un catálogo navegable — para eso está Search), y viven dentro de un único
+  `ScrollView` de la pantalla; anidar `FlatList`s ahí sería el anti-patrón "VirtualizedList dentro
+  de ScrollView" que React Native explícitamente desaconseja.
+
+**Bug real encontrado y corregido durante la verificación de esta prioridad:** `listPlaces`
+ordenaba solo por `rating_avg` (`ORDER BY rating_avg DESC`), pero esa columna no es única — en el
+seed MOCK, 40 de los 72 lugares empatan en `3.33`. Sin una columna de desempate, Postgres no
+garantiza el mismo orden entre dos consultas paginadas con `OFFSET`/`LIMIT` distintos, así que al
+pedir la página siguiente en Search a veces se repetía un lugar que ya había aparecido (y se
+saltaba otro) — con datos reales a mayor escala esto habría sido mucho más notorio. Se agregó `id`
+como segundo criterio de orden (`.order('rating_avg', ...).order('id', ...)`), que sí es único, para
+que el orden sea determinístico entre páginas. Encontrado gracias a una verificación real en
+navegador (ver abajo), no habría aparecido con una sola página de resultados.
+
+**Verificación en navegador:** extendiendo el REST shim de verificación (Fases 2-8) para soportar
+`offset`/`limit` como los manda `supabase-js` (no hace falta el header HTTP `Range`, esta versión
+de `postgrest-js` ya los manda como parámetros de query) y múltiples `.order()` encadenados. Con
+eso, contra el código real de la app (sin mockear `usePlacesInfinite` ni `listPlaces`): carga
+inicial de 20 tarjetas, scroll hasta el final → 40, scroll de nuevo → 60, scroll de nuevo → las 72
+completas sin duplicados, y scrolls adicionales después de eso no vuelven a pedir más (`hasNextPage`
+correctamente en `false`). También se confirmó que buscar por texto ("Café") sigue filtrando bien
+sobre `usePlacesInfinite`. Como Search/Favoritos no dependen de sesión autenticada (`places` es de
+lectura pública), esta fue una de las pocas prioridades de esta ronda que sí se pudo verificar de
+punta a punta en el navegador — a diferencia de Prioridad 6, que solo se pudo cubrir con tests.
+
+`src/features/places/__tests__/usePlacesInfinite.test.tsx` (nuevo) prueba la primera página con
+`offset: 0`, que `hasNextPage` refleje si la página vino completa o no, y que `fetchNextPage` pida
+el `offset` correcto. `queries.test.ts` suma casos para `range()`/`offset` y para el desempate por
+`id`.
 
 ## Mapas y ubicación (Fase 5)
 

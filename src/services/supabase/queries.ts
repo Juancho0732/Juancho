@@ -39,6 +39,8 @@ export type ListPlacesFilters = {
   minRating?: number;
   search?: string;
   limit?: number;
+  /** Prioridad 7 (paginación): página 0-based en unidades de `limit`, para Search. */
+  offset?: number;
 };
 
 export async function listPlaces(filters: ListPlacesFilters = {}): Promise<Place[]> {
@@ -66,7 +68,17 @@ export async function listPlaces(filters: ListPlacesFilters = {}): Promise<Place
     }
   }
 
-  query = query.order('rating_avg', { ascending: false }).limit(filters.limit ?? 30);
+  const limit = filters.limit ?? 30;
+  const offset = filters.offset ?? 0;
+  // Prioridad 7: `rating_avg` por sí solo no es único (muchos lugares empatan,
+  // ej. varios en 3.33) -- sin una segunda columna de desempate, Postgres no
+  // garantiza el mismo orden entre páginas paginadas con OFFSET/LIMIT, y
+  // Search terminaba mostrando el mismo lugar dos veces (o saltándose otros)
+  // al pedir la página siguiente. `id` como desempate hace el orden estable.
+  query = query
+    .order('rating_avg', { ascending: false })
+    .order('id', { ascending: true })
+    .range(offset, offset + limit - 1);
 
   const { data, error } = await query;
   if (error) throw error;
@@ -115,12 +127,23 @@ export async function listPlaceImages(placeId: string): Promise<PlaceImage[]> {
   return data;
 }
 
+/**
+ * Prioridad 7 (escalabilidad): sin límite, un lugar muy popular podría ir
+ * acumulando cientos/miles de reseñas con los años y esta consulta las
+ * traería todas de una. 200 es un límite defensivo generoso para el tamaño
+ * de una beta (no hace falta paginación completa todavía, a diferencia de
+ * Search) -- si en el futuro un lugar real se acerca a ese límite, ahí sí
+ * amerita paginación real.
+ */
+const REVIEWS_LIMIT = 200;
+
 export async function listReviewsForPlace(placeId: string): Promise<ReviewWithAuthor[]> {
   const { data, error } = await supabase
     .from('reviews')
     .select('*, profiles(display_name)')
     .eq('place_id', placeId)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(REVIEWS_LIMIT);
   if (error) throw error;
   return data as unknown as ReviewWithAuthor[];
 }
