@@ -2,6 +2,7 @@ import type {
   Category,
   Place,
   PlaceImage,
+  PlaceListItem,
   PlaceWithDistance,
   Profile,
   Review,
@@ -43,8 +44,16 @@ export type ListPlacesFilters = {
   offset?: number;
 };
 
-export async function listPlaces(filters: ListPlacesFilters = {}): Promise<Place[]> {
-  let query = supabase.from('places').select('*').eq('status', 'active');
+// Prioridad 13 (rendimiento): Search/Home solo muestran PlaceCard, que nunca
+// lee description/tags/address/lat/lng/schedule/source/last_verified_at/
+// created_at/is_mock -- pedirlas igual solo agranda cada página de
+// resultados sin ningún beneficio. El detalle completo sigue trayendo todo
+// (getPlaceById). Filtrar/buscar por una columna (ej. status, description en
+// el .or() de abajo) no requiere incluirla en el select.
+const PLACE_LIST_COLUMNS = 'id, name, category_id, locality, price_min, price_max, rating_avg, review_count';
+
+export async function listPlaces(filters: ListPlacesFilters = {}): Promise<PlaceListItem[]> {
+  let query = supabase.from('places').select(PLACE_LIST_COLUMNS).eq('status', 'active');
 
   if (filters.locality) {
     query = query.eq('locality', filters.locality);

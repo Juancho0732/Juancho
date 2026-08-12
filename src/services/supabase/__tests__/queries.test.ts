@@ -76,6 +76,18 @@ describe('listPlaces', () => {
     expect(calls).toContainEqual({ method: 'range', args: [0, 29] });
   });
 
+  it('Prioridad 13: solo pide las columnas que PlaceCard usa, no select(*) (agrandaría cada página sin beneficio)', async () => {
+    const { builder, calls } = createQueryBuilder({ data: [], error: null });
+    mockFrom.mockReturnValue(builder);
+
+    await listPlaces();
+
+    const selectCall = calls.find((call) => call.method === 'select');
+    expect(selectCall?.args[0]).toBe(
+      'id, name, category_id, locality, price_min, price_max, rating_avg, review_count',
+    );
+  });
+
   it('aplica locality, categoryId, maxPrice y minRating cuando se pasan', async () => {
     const { builder, calls } = createQueryBuilder({ data: [], error: null });
     mockFrom.mockReturnValue(builder);

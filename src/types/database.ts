@@ -78,3 +78,18 @@ export type Favorite = {
 
 /** Resultado de la RPC `nearby_places` (Fase 5): un `Place` + distancia en metros. */
 export type PlaceWithDistance = Place & { distance_m: number };
+
+/**
+ * Subconjunto de columnas de `places` que de verdad usa una tarjeta de lista
+ * (`PlaceCard`) -- Search/Home no necesitan `description`/`tags`/`address`/
+ * `lat`/`lng`/`schedule`/`source`/`last_verified_at`/`created_at`/`is_mock`,
+ * que solo agrandarían el payload de cada página de resultados sin ningún
+ * beneficio (Prioridad 13: pensado para escalar de 72 a cientos/miles de
+ * lugares). El detalle completo de un lugar sigue trayendo todo
+ * (`getPlaceById` → `Place`); esto es específicamente para `listPlaces`
+ * (Search, "Lugares populares" de Home).
+ */
+export type PlaceListItem = Pick<
+  Place,
+  'id' | 'name' | 'category_id' | 'locality' | 'price_min' | 'price_max' | 'rating_avg' | 'review_count'
+>;

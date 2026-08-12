@@ -2,11 +2,14 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Card, Text } from '@/components/ui';
 import { theme } from '@/design-system/theme';
-import type { Place } from '@/types/database';
+import type { PlaceListItem } from '@/types/database';
 import { formatDistance, formatPriceRange } from '@/utils/format';
 
 type Props = {
-  place: Place;
+  // Acepta cualquier lugar que traiga al menos estas columnas -- un `Place`
+  // completo (detalle) también sirve, PlaceCard nunca usó el resto de sus
+  // campos (Prioridad 13).
+  place: PlaceListItem;
   categoryName?: string;
   /** En metros, si se conoce la ubicación del usuario (Fase 5). */
   distanceMeters?: number;

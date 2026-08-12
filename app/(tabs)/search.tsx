@@ -8,7 +8,7 @@ import { theme } from '@/design-system/theme';
 import { useFavoriteIds, useToggleFavorite } from '@/features/favorites';
 import { FiltersSheet, useCategories, usePlacesInfinite, type PlaceFilters } from '@/features/places';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
-import type { Place } from '@/types/database';
+import type { PlaceListItem } from '@/types/database';
 
 export default function SearchScreen() {
   const params = useLocalSearchParams<{ categoryId?: string }>();
@@ -75,7 +75,7 @@ export default function SearchScreen() {
         >
           <FlatList
             data={places}
-            keyExtractor={(place: Place) => place.id}
+            keyExtractor={(place: PlaceListItem) => place.id}
             contentContainerStyle={styles.results}
             showsVerticalScrollIndicator={false}
             onEndReachedThreshold={0.4}

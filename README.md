@@ -456,6 +456,40 @@ punta a punta en el navegador — a diferencia de Prioridad 6, que solo se pudo 
 el `offset` correcto. `queries.test.ts` suma casos para `range()`/`offset` y para el desempate por
 `id`.
 
+### Rendimiento de listas (auditoría de beta-readiness, Prioridad 13)
+
+**Cambio real:** `listPlaces` (Search, "Lugares populares" de Home) pedía `select('*')` — las 19
+columnas de `places`, incluyendo `description`, `tags`, `address`, `lat`/`lng`, `schedule`
+(`jsonb`), `source`, `last_verified_at` y `created_at`. Ninguna de esas la usa `PlaceCard` (la
+única forma en que estos resultados se muestran): confirmado con `grep` sobre `PlaceCard.tsx` y
+las cuatro pantallas que lo consumen (Search, Home, Favoritos, Recomendaciones). A la escala de
+"cientos/miles de lugares" que pide esta prioridad, pedir esas columnas de más en cada página de
+20 resultados (Prioridad 7) es puro peso de payload sin ningún beneficio. `listPlaces` ahora pide
+solo las 8 columnas que `PlaceCard` de verdad usa (`PLACE_LIST_COLUMNS` en `queries.ts`), con un
+tipo nuevo (`PlaceListItem`, subconjunto de `Place`) para que quede explícito en TypeScript qué
+puede confiarse que trae un resultado de lista vs. el detalle completo de un lugar
+(`getPlaceById`/`Place`, sin cambios). El resto de los datos (`listNearbyPlaces`,
+`listFavoritePlaces`, `listPersonalizedPlaces`, resultados de la búsqueda por IA) siguen trayendo
+el `Place` completo — todos son estructuralmente compatibles con `PlaceListItem`, así que
+`PlaceCard` los sigue aceptando sin ningún cambio en esas pantallas.
+
+**Revisado, sin encontrar un problema real (para no maquillar el hallazgo con cambios que no
+hacían falta):**
+
+- **Imágenes** (`app/place/[id]/index.tsx`) — ya usa `expo-image` (no el `Image` básico de React
+  Native), con caché en disco/memoria y carga diferida por defecto. La galería de un lugar es una
+  lista horizontal corta y acotada (las fotos de un solo lugar a la vez, no de una lista de
+  lugares), no hay ventana/virtualización que agregar ahí.
+- **Home** — sus tres secciones acotadas (10/10/6, ver Prioridad 7) siguen dentro de un único
+  `ScrollView`, a propósito: son vistas previas de un dashboard, no listas para virtualizar.
+- **Consultas duplicadas / caché de React Query** — `queryClient` ya tiene `staleTime: 60_000`
+  global (`services/query-client.ts`, sin cambios desde la Fase 1). Los `queryKey` que incluyen un
+  objeto de filtros recién creado en cada render (ej. `['places', filters]` en `usePlaces`) no son
+  un problema: React Query serializa el key de forma estructural para el caché, no depende de que
+  el objeto sea la misma referencia entre renders — confirmado revisando cada hook de
+  `src/features/places/` y `src/features/favorites/`, ninguno tiene un patrón que dispare
+  refetches innecesarios.
+
 ## Mapas y ubicación (Fase 5)
 
 - **Cercanía en la base de datos** — `supabase/migrations/20260811120008_nearby_places.sql`
