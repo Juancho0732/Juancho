@@ -7,6 +7,7 @@ import { StyleSheet, View } from 'react-native';
 import { Button, FormInput, Screen, Text } from '@/components/ui';
 import { theme } from '@/design-system/theme';
 import { signIn, loginSchema, type LoginInput } from '@/features/auth';
+import { logAndGetSafeMessage } from '@/utils/errors';
 
 export default function LoginScreen() {
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -25,7 +26,7 @@ export default function LoginScreen() {
       await signIn(values);
       // useProtectedRoute (app/_layout.tsx) redirige a /home al detectar la sesión.
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : 'No se pudo iniciar sesión.');
+      setSubmitError(logAndGetSafeMessage('signIn', error, 'No se pudo iniciar sesión. Verifica tu correo y contraseña.'));
     }
   });
 

@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 
-import { AIProviderError, AnthropicProvider, type AIProvider } from './aiProvider.ts';
+import { AnthropicProvider, type AIProvider } from './aiProvider.ts';
 import { isExplanationSafe } from './explanationValidator.ts';
 import { buildFallbackExplanation } from './fallbackExplanation.ts';
 import { heuristicParseIntent } from './heuristicParser.ts';
@@ -217,9 +217,11 @@ Deno.serve(async (req: Request) => {
 
     return jsonResponse({ status: 'ok', intent, explanation, results }, 200);
   } catch (error) {
+    // Prioridad 4 (auditoría de beta-readiness): nunca se devuelve error.message al
+    // cliente -- puede traer el cuerpo crudo de la respuesta de Anthropic (AIProviderError)
+    // o detalle interno de Postgres/PostgREST (errores de Supabase). El detalle real
+    // solo va al log del servidor; el usuario siempre recibe el mismo mensaje genérico.
     console.error('ai-search error inesperado:', error);
-    const message =
-      error instanceof AIProviderError ? error.message : 'Algo salió mal buscando tus planes. Intenta de nuevo.';
-    return jsonResponse({ status: 'error', message }, 500);
+    return jsonResponse({ status: 'error', message: 'Algo salió mal buscando tus planes. Intenta de nuevo.' }, 500);
   }
 });

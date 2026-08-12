@@ -449,6 +449,32 @@ auditoría contra las dos capas (que queden delimitadas como dato en la capa 1, 
 comprometida hipotética se rechace en la capa 2), más dos búsquedas legítimas de punta a punta para
 confirmar que la defensa no rompe el uso normal.
 
+### Errores internos (auditoría de beta-readiness, Prioridad 4)
+
+Ningún catch de la app le muestra al usuario el mensaje crudo de un error — puede traer detalle
+interno (nombre de tabla/constraint de Postgres, el cuerpo de una respuesta de error de la API de
+Anthropic, mensajes de un módulo nativo) o venir en inglés en una app en español (los mensajes de
+`supabase-js`, por ejemplo, llegan sin traducir):
+
+- **Cliente** — `src/utils/errors.ts` exporta `logAndGetSafeMessage(context, error, fallback)`:
+  registra el error real en consola (equivalente local de "log de servidor" para una app cliente,
+  mismo patrón que ya usaba `ai-search/index.ts`) y siempre devuelve el mensaje genérico que cada
+  pantalla ya tenía definido — nunca `error.message`. Aplicado en los cinco lugares donde un catch
+  mostraba el mensaje crudo: `login.tsx`, `register.tsx`, `profile.tsx` (cierre de sesión),
+  `place/[id]/reviews.tsx` (guardar reseña) y `useUserLocation.ts`.
+- **Edge Function** — `ai-search/index.ts` tenía un caso que exponía el mensaje crudo de
+  `AIProviderError` al cliente cuando el error escapaba del catch general (el cuerpo de texto
+  completo de una respuesta de error de la API de Anthropic, con su código HTTP). En el flujo actual
+  ese caso ya no era alcanzable en la práctica (ambas llamadas a la IA ya atrapan sus propios
+  errores y caen a la heurística/plantilla), pero se corrigió igual: el catch general ahora siempre
+  devuelve el mismo mensaje genérico, sin importar el tipo de error, para que quede así también si
+  el código cambia más adelante. El error real se sigue registrando completo con `console.error`
+  (logs de la función, no de la respuesta al cliente).
+
+`src/utils/__tests__/errors.test.ts` prueba que `logAndGetSafeMessage` nunca deja pasar el mensaje
+crudo (incluido un caso con un mensaje de constraint de Postgres real) y que sí registra el error
+original en consola.
+
 ## Personalización (Fase 8)
 
 "Recomendado para ti" en Home: una sección más, con las mismas reglas que el resto del proyecto

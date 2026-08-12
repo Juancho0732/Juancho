@@ -7,6 +7,7 @@ import { StyleSheet, View } from 'react-native';
 import { Button, Card, FormInput, Screen, Text } from '@/components/ui';
 import { theme } from '@/design-system/theme';
 import { signUp, registerSchema, type RegisterInput } from '@/features/auth';
+import { logAndGetSafeMessage } from '@/utils/errors';
 
 export default function RegisterScreen() {
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -29,7 +30,9 @@ export default function RegisterScreen() {
       }
       // Si no requiere confirmación, useProtectedRoute redirige a /home solo.
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : 'No se pudo crear la cuenta.');
+      setSubmitError(
+        logAndGetSafeMessage('signUp', error, 'No se pudo crear la cuenta. Intenta de nuevo en un momento.'),
+      );
     }
   });
 

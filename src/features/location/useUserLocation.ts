@@ -1,6 +1,8 @@
 import * as Location from 'expo-location';
 import { useCallback, useState } from 'react';
 
+import { logAndGetSafeMessage } from '@/utils/errors';
+
 export type Coordinates = { lat: number; lng: number };
 
 type LocationState =
@@ -35,7 +37,7 @@ export function useUserLocation() {
     } catch (error) {
       setState({
         status: 'error',
-        message: error instanceof Error ? error.message : 'No se pudo obtener tu ubicación.',
+        message: logAndGetSafeMessage('requestLocation', error, 'No se pudo obtener tu ubicación.'),
       });
     }
   }, []);

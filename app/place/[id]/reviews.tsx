@@ -7,6 +7,7 @@ import { Button, ConfirmDialog, QueryState, Screen, StarRating, Text } from '@/c
 import { theme } from '@/design-system/theme';
 import { useAuthStore } from '@/features/auth';
 import { usePlace } from '@/features/places';
+import { logAndGetSafeMessage } from '@/utils/errors';
 import {
   ReviewFormSheet,
   reviewToFormValues,
@@ -43,7 +44,7 @@ export default function PlaceReviewsScreen() {
       await upsertReview.mutateAsync(toUpsertReviewInput(id, userId, values));
       setEditingReview(undefined);
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : 'No se pudo guardar la reseña.');
+      setSubmitError(logAndGetSafeMessage('upsertReview', error, 'No se pudo guardar la reseña. Intenta de nuevo.'));
     }
   };
 

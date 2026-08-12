@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import { Button, Card, Screen, Text } from '@/components/ui';
 import { theme } from '@/design-system/theme';
 import { signOut, useAuthStore, useProfile } from '@/features/auth';
+import { logAndGetSafeMessage } from '@/utils/errors';
 
 export default function ProfileScreen() {
   const session = useAuthStore((state) => state.session);
@@ -18,7 +19,7 @@ export default function ProfileScreen() {
       await signOut();
       // useProtectedRoute (app/_layout.tsx) redirige a /login al detectar el cierre de sesión.
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo cerrar sesión.');
+      setError(logAndGetSafeMessage('signOut', err, 'No se pudo cerrar sesión. Intenta de nuevo.'));
       setIsSigningOut(false);
     }
   };
