@@ -79,11 +79,90 @@ Ver `.env.example`. Resumen:
 | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Cliente (bundle) | Pública, protegida por Row Level Security |
 | `AI_PROVIDER`, `AI_API_KEY`, `AI_MODEL` | Solo Supabase Edge Function | Nunca en el cliente |
 | `SUPABASE_SERVICE_ROLE_KEY` | Solo Supabase Edge Function | Nunca en el cliente |
-| `AI_RATE_LIMIT_PER_MINUTE` | Solo Supabase Edge Function | Control de costo |
+| `AI_RATE_LIMIT_PER_MINUTE`, `AI_DAILY_LIMIT_PER_USER`, `AI_GLOBAL_RATE_LIMIT_PER_MINUTE` | Solo Supabase Edge Function | Control de costo (Prioridad 9) |
 | `GOOGLE_MAPS_API_KEY` | Solo build nativo Android (`app.config.ts`) | No llega al bundle JS |
 
 Sin `EXPO_PUBLIC_SUPABASE_URL`/`EXPO_PUBLIC_SUPABASE_ANON_KEY` la app falla al iniciar con un
 error explícito (`src/services/supabase/client.ts`) en vez de fallar silenciosamente más adelante.
+
+## Seguridad de configuración (auditoría de beta-readiness, Prioridad 11)
+
+**Auditado, sin secretos expuestos:** se revisó todo el repositorio (archivos trackeados por git,
+incluyendo el historial completo, no solo el estado actual) buscando patrones de claves reales
+(API keys de Anthropic/Google, JWTs, llaves privadas) — no se encontró ninguna. Nunca se commiteó
+un `.env` real, solo `.env.example` (con valores vacíos). `.gitignore` cubre `.env`/`.env*.local`.
+
+**Cómo está separado cliente vs. servidor, y por qué es seguro así:**
+
+- `EXPO_PUBLIC_SUPABASE_URL`/`EXPO_PUBLIC_SUPABASE_ANON_KEY` van en el bundle de la app a
+  propósito — es el diseño de Supabase: la `anon key` no es secreta, la protección real es Row
+  Level Security en Postgres (auditada en cada fase de este proyecto vía `rls_smoke_test.sql`). Si
+  alguna tabla/RPC no tuviera RLS bien configurada, esa sí sería la vulnerabilidad real, no la
+  presencia de la key en el bundle.
+- `SUPABASE_SERVICE_ROLE_KEY` (bypassa RLS por completo) y `AI_API_KEY` **nunca** llegan al
+  cliente: solo existen como secretos de la Edge Function (`supabase secrets set`, o el `.env`
+  local de Supabase para desarrollo), leídos con `Deno.env.get(...)` dentro de
+  `supabase/functions/ai-search/index.ts`. `SUPABASE_URL`/`SUPABASE_ANON_KEY` (sin el prefijo
+  `EXPO_PUBLIC_`, son variables *distintas* aunque el valor final coincida con las del cliente) los
+  inyecta Supabase automáticamente en el entorno de cada Edge Function — no hace falta
+  configurarlos a mano.
+- `GOOGLE_MAPS_API_KEY` no lleva prefijo `EXPO_PUBLIC_` a propósito: `app.config.ts` la usa solo en
+  tiempo de build (`expo prebuild`/EAS Build) para generarla dentro de `AndroidManifest.xml` —
+  nunca pasa por el bundle de JavaScript. Aun así, una API key de Google Maps siempre termina
+  siendo visible (cualquiera puede extraerla del `.apk` compilado) — por eso la protección real no
+  es ocultarla, es restringirla en Google Cloud Console (siguiente punto).
+
+**REQUIERE CONFIGURACIÓN EXTERNA — restricción de la API key de Google Maps en Google Cloud
+Console** (no se puede hacer desde este repositorio, y no se debe dejar la key sin restringir en
+un build real):
+
+1. En [Google Cloud Console → Credentials](https://console.cloud.google.com/apis/credentials),
+   editar la API key usada como `GOOGLE_MAPS_API_KEY`.
+2. **Application restrictions → Android apps**: agregar el `package name` de la app y su huella
+   SHA-1 de firma (la del keystore de release, no la de debug — EAS Build la genera/gestiona si se
+   usa `eas build`).
+3. **API restrictions**: limitarla únicamente a "Maps SDK for Android" (la única que esta app usa
+   en Android; iOS usa Apple Maps sin key, ver "Mapas y ubicación").
+4. Sin esto, cualquiera que extraiga la key del `.apk` publicado podría usarla desde su propia app,
+   consumiendo la cuota/facturación del proyecto de Google Cloud sin límite.
+
+**Bloqueante para el paso anterior, y también REQUIERE DECISIÓN DEL EQUIPO:** `app.config.ts`
+todavía no define `android.package` ni `ios.bundleIdentifier`, y no existe un `eas.json` con
+perfiles de build. Sin un `package name` definitivo no hay nada que restringir en el paso 2 de
+arriba, y tampoco se puede generar un build real (EAS Build ni `expo prebuild` lo aceptan sin
+esto). Elegir el identificador de paquete (ej. `com.juancho.app`) es una decisión de branding/
+producto — no se inventó uno acá a propósito, para no comprometer un identificador que después sea
+difícil de cambiar (una vez publicado en las tiendas, el `package name`/`bundleIdentifier` es
+prácticamente inmutable).
+
+**CORS de la Edge Function** (`Access-Control-Allow-Origin: '*'` en
+`supabase/functions/ai-search/index.ts`) — revisado, no es un hueco: la función se autentica con un
+JWT en el header `Authorization`, no con cookies. CORS solo protege contra que un sitio ajeno haga
+que el *navegador de la víctima* mande credenciales automáticamente (como pasa con cookies); un
+`Authorization` header no se manda solo, un sitio atacante tendría que tener ya el JWT en su propio
+JavaScript para reenviarlo — en ese punto CORS no agrega protección real. Restringir el origen a un
+dominio fijo tampoco tiene sentido todavía: no existe un despliegue web de producción (el build web
+es solo la vía rápida de desarrollo de UI, ver "Requisitos"), así que cualquier dominio que se
+fijara ahora sería una suposición.
+
+**Checklist antes de abrir la beta con un proyecto Supabase real** (hoy todo este proyecto se
+verificó contra Postgres local + un REST shim de desarrollo, nunca contra Supabase real — ver cada
+sección "Verificación" de este README):
+
+- REQUIERE CONFIGURACIÓN EXTERNA — crear el proyecto Supabase real, aplicar las migraciones
+  (`supabase db push` o el flujo que use el equipo), configurar los secretos de la Edge Function
+  (`supabase secrets set AI_API_KEY=... AI_MODEL=... AI_RATE_LIMIT_PER_MINUTE=... AI_DAILY_LIMIT_PER_USER=... AI_GLOBAL_RATE_LIMIT_PER_MINUTE=...`).
+- REQUIERE CONFIGURACIÓN EXTERNA — completar el `.env` real de la app
+  (`EXPO_PUBLIC_SUPABASE_URL`/`EXPO_PUBLIC_SUPABASE_ANON_KEY` del proyecto real) y **nunca**
+  commitearlo.
+- REQUIERE CONFIGURACIÓN EXTERNA — habilitar/configurar confirmación de correo y las Redirect URLs
+  de recuperación de contraseña en Supabase Auth (`juancho://reset-password`, ver Prioridad 5) para
+  el proyecto real.
+- REQUIERE DECISIÓN DEL EQUIPO — elegir `android.package`/`ios.bundleIdentifier`, crear `eas.json`,
+  obtener y restringir una API key de Google Maps real para ese package name (puntos anteriores).
+- REQUIERE CONFIGURACIÓN EXTERNA — decidir si el seed MOCK se carga en el proyecto de
+  staging/beta (con la salvaguarda de la Prioridad 1 ya lista) o si la beta arranca sin datos
+  ficticios hasta tener lugares reales importados (Prioridad 1, `import_real_places.py`).
 
 ## Estructura del proyecto
 
