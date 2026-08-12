@@ -8,7 +8,10 @@ export const loginSchema = z.object({
 export type LoginInput = z.infer<typeof loginSchema>;
 
 export const registerSchema = z.object({
-  displayName: z.string().trim().min(2, 'Ingresa tu nombre'),
+  // Prioridad 8 (auditoría de beta-readiness): el máximo coincide con el
+  // CHECK profiles_display_name_length de la base de datos -- esta es solo
+  // la primera capa (feedback inmediato en el formulario), no la única.
+  displayName: z.string().trim().min(2, 'Ingresa tu nombre').max(80, 'Máximo 80 caracteres'),
   email: z.string().trim().min(1, 'Ingresa tu correo').email('Correo inválido'),
   password: z.string().min(8, 'Mínimo 8 caracteres'),
 });

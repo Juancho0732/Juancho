@@ -47,6 +47,32 @@ describe('reviewFormSchema', () => {
     });
     expect(result.success).toBe(true);
   });
+
+  it('Prioridad 8: rechaza amountPaid absurdamente alto (mismo tope que el CHECK de la base de datos)', () => {
+    expect(
+      reviewFormSchema.safeParse({ ...REVIEW_FORM_DEFAULTS, rating: 3, amountPaid: '10000001' }).success,
+    ).toBe(false);
+    expect(
+      reviewFormSchema.safeParse({ ...REVIEW_FORM_DEFAULTS, rating: 3, amountPaid: '10000000' }).success,
+    ).toBe(true);
+  });
+
+  it('Prioridad 8: rechaza una ocasión fuera de la lista curada', () => {
+    const result = reviewFormSchema.safeParse({
+      ...REVIEW_FORM_DEFAULTS,
+      rating: 3,
+      occasion: 'cumpleaños',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('Prioridad 8: acepta cualquier ocasión de la lista curada', () => {
+    for (const value of ['amigos', 'pareja', 'familia', 'solo', 'trabajo']) {
+      expect(reviewFormSchema.safeParse({ ...REVIEW_FORM_DEFAULTS, rating: 3, occasion: value }).success).toBe(
+        true,
+      );
+    }
+  });
 });
 
 describe('toUpsertReviewInput', () => {

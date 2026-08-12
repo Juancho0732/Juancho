@@ -45,6 +45,24 @@ describe('registerSchema', () => {
     expect(result.success).toBe(false);
   });
 
+  it('Prioridad 8: rechaza un nombre de más de 80 caracteres (mismo tope que el CHECK de la base de datos)', () => {
+    const result = registerSchema.safeParse({
+      displayName: 'a'.repeat(81),
+      email: 'ana@example.com',
+      password: 'password123',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('Prioridad 8: acepta un nombre de exactamente 80 caracteres', () => {
+    const result = registerSchema.safeParse({
+      displayName: 'a'.repeat(80),
+      email: 'ana@example.com',
+      password: 'password123',
+    });
+    expect(result.success).toBe(true);
+  });
+
   it('rechaza correo inválido', () => {
     const result = registerSchema.safeParse({
       displayName: 'Ana',

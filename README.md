@@ -413,6 +413,37 @@ llega al bundle de JavaScript).
   de "Eliminar reseña" usa un `ConfirmDialog` propio (modal) en vez de `Alert`, para que también
   funcione en la vía rápida de desarrollo web.
 
+### Validación de contenido (auditoría de beta-readiness, Prioridad 8)
+
+Hasta esta prioridad, los límites de `reviews.comment`/`amount_paid`/`occasion` y
+`profiles.display_name` (longitud, rango, valores permitidos) solo vivían en los esquemas zod del
+cliente. Eso alcanza para la UI de la app, pero Supabase REST es accesible directamente con
+cualquier JWT válido — nada impedía que una llamada hecha a mano se saltara `reviewFormSchema` por
+completo. Mismo principio que el `CHECK` de datos reales de la Prioridad 1 (no confiar solo en una
+capa): los mismos límites ahora también son `CHECK` constraints
+(`supabase/migrations/20260811120011_content_validation.sql`):
+
+- `reviews_comment_length` — `comment` opcional, pero si está presente debe tener entre 1 y 500
+  caracteres sin contar espacios al borde (nunca una cadena vacía o solo espacios).
+- `reviews_amount_paid_range` — `amount_paid` opcional, pero si está presente debe ser positivo y
+  no superar $10.000.000 COP (tope generoso para bloquear valores absurdos/basura, no para
+  restringir lugares caros reales).
+- `reviews_occasion_valid` — `occasion` opcional, pero si está presente debe ser una de las cinco
+  curadas (`amigos`, `pareja`, `familia`, `solo`, `trabajo`) — las mismas que ya limitaban el
+  `Chip` del formulario, ahora también a nivel de base de datos.
+- `profiles_display_name_length` — entre 1 y 80 caracteres sin contar espacios al borde.
+
+El cliente (`reviewFormSchema`, `registerSchema`) se actualizó para reflejar exactamente los mismos
+límites — sigue siendo la primera capa (da el error al instante, sin esperar un roundtrip), pero la
+que realmente protege la integridad de los datos es la de la base de datos.
+
+**Verificado contra Postgres real, desde cero** (no solo aplicando la migración encima de una base
+ya sembrada): `createdb` nuevo → las 11 migraciones en orden → seed MOCK completo (120 reseñas, 10
+perfiles) sin ningún conflicto con los `CHECK` nuevos → `rls_smoke_test.sql` con 6 escenarios
+nuevos (20-24, uno con tres sub-casos) confirmando que cada límite rechaza el valor inválido y
+acepta el válido. El seed ya generaba solo valores dentro de estos rangos (comentarios cortos,
+montos entre $15.000-$90.000, las mismas 5 ocasiones), así que no hizo falta tocarlo.
+
 ## Búsqueda por IA (Fase 7)
 
 Implementa el pipeline descrito en `docs/00-fase0-analisis.md` (Reglas 8 y 10): **la IA nunca es

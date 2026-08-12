@@ -147,4 +147,58 @@ from public.places where name = 'Lugar real de prueba';
 delete from public.places where name = 'Lugar real de prueba';
 reset role;
 
+\echo '--- 20) reviews_comment_length (Prioridad 8): un comentario de más de 500 caracteres debe fallar ---'
+set role authenticated;
+set request.jwt.claim.sub = '11111111-1111-1111-1111-111111111105';
+insert into public.reviews (place_id, user_id, rating, comment)
+select id, '11111111-1111-1111-1111-111111111105', 4, repeat('x', 501)
+from public.places offset 10 limit 1;
+reset role;
+
+\echo '--- 21) reviews_comment_length: un comentario vacío (no null, string vacío) también debe fallar ---'
+set role authenticated;
+set request.jwt.claim.sub = '11111111-1111-1111-1111-111111111105';
+insert into public.reviews (place_id, user_id, rating, comment)
+select id, '11111111-1111-1111-1111-111111111105', 4, '   '
+from public.places offset 10 limit 1;
+reset role;
+
+\echo '--- 22) reviews_amount_paid_range: un monto negativo o absurdamente alto debe fallar, uno válido no ---'
+set role authenticated;
+set request.jwt.claim.sub = '11111111-1111-1111-1111-111111111105';
+insert into public.reviews (place_id, user_id, rating, amount_paid)
+select id, '11111111-1111-1111-1111-111111111105', 4, -1000
+from public.places offset 10 limit 1;
+insert into public.reviews (place_id, user_id, rating, amount_paid)
+select id, '11111111-1111-1111-1111-111111111105', 4, 999999999
+from public.places offset 10 limit 1;
+insert into public.reviews (place_id, user_id, rating, amount_paid)
+select id, '11111111-1111-1111-1111-111111111105', 4, 50000
+from public.places offset 10 limit 1;
+select amount_paid from public.reviews
+where user_id = '11111111-1111-1111-1111-111111111105' and amount_paid = 50000;
+-- Solo la fila de prueba que se acaba de insertar -- este usuario puede ya
+-- tener otras reseñas del seed, y no hay que borrarlas.
+delete from public.reviews
+where user_id = '11111111-1111-1111-1111-111111111105' and amount_paid = 50000;
+reset role;
+
+\echo '--- 23) reviews_occasion_valid: una ocasión fuera de la lista curada debe fallar (evita saltarse el saneamiento por REST directo) ---'
+set role authenticated;
+set request.jwt.claim.sub = '11111111-1111-1111-1111-111111111105';
+insert into public.reviews (place_id, user_id, rating, occasion)
+select id, '11111111-1111-1111-1111-111111111105', 4, 'cumpleaños'
+from public.places offset 10 limit 1;
+reset role;
+
+\echo '--- 24) profiles_display_name_length: vacío o de más de 80 caracteres debe fallar (la persona sí puede editar su propio nombre) ---'
+set role authenticated;
+set request.jwt.claim.sub = '11111111-1111-1111-1111-111111111105';
+update public.profiles set display_name = '' where id = '11111111-1111-1111-1111-111111111105';
+update public.profiles set display_name = repeat('x', 81) where id = '11111111-1111-1111-1111-111111111105';
+update public.profiles set display_name = 'Nombre Válido' where id = '11111111-1111-1111-1111-111111111105';
+select display_name from public.profiles where id = '11111111-1111-1111-1111-111111111105';
+update public.profiles set display_name = 'Valentina' where id = '11111111-1111-1111-1111-111111111105';
+reset role;
+
 \echo '--- listo ---'
