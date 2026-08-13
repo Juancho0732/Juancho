@@ -59,15 +59,13 @@ const config: ExpoConfig = {
   experiments: {
     typedRoutes: true,
   },
+  owner: 'juancho0725',
   extra: {
-    // PENDIENTE -- REQUIERE DECISIÓN HUMANA (login de una cuenta Expo/EAS):
-    // `eas init` (o la primera vez que se corre `eas build`) rellena esto
-    // automáticamente con el ID real del proyecto en EAS. No se puede
-    // generar ni inventar desde acá -- sin este valor, eas.json/build
-    // funciona igual para builds locales, pero `eas build` en la nube lo va
-    // a pedir.
+    // ID real del proyecto en EAS (@juancho0725/zone), creado con `eas init`.
+    // Se escribe a mano porque `eas init` no sabe editar un app.config.ts
+    // (solo app.json); el valor viene de la API de Expo, no es inventado.
     eas: {
-      projectId: 'PENDIENTE-correr-eas-init',
+      projectId: 'f49fad08-a17f-468a-b90a-89d24bd812b5',
     },
   },
 };
