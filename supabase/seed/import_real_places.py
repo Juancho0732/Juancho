@@ -56,14 +56,18 @@ REQUIRED_FIELDS = [
     "locality",
     "lat",
     "lng",
-    "price_min",
-    "price_max",
-    "schedule",
     "description",
     "source",
     "last_verified_at",
 ]
-OPTIONAL_FIELDS = ["images", "tags"]
+# price_min/price_max/schedule son opcionales A PROPÓSITO: hay categorías
+# enteras (vida nocturna, sobre todo) donde el lugar existe y es real pero no
+# publica horario ni precio en ninguna fuente verificable. Antes eran
+# obligatorios, y eso obligaba a elegir entre inventar el dato o descartar el
+# lugar. Ahora se dejan vacíos -> NULL en la base, y la app muestra
+# "Horario no publicado -- confirma con el lugar" / "Precio no disponible".
+# Vacío nunca significa "gratis" ni "cerrado": significa "no se sabe".
+OPTIONAL_FIELDS = ["images", "tags", "price_min", "price_max", "schedule"]
 
 # Sanity check de coordenadas -- no es el límite exacto de Bogotá, es un
 # rectángulo generoso para atrapar lat/lng invertidas o basura evidente.
@@ -235,27 +239,32 @@ def validate_row(row_number: int, raw: dict) -> RowResult:
     elif not (BOGOTA_LNG_RANGE[0] <= lng <= BOGOTA_LNG_RANGE[1]):
         result.errors.append(f"lng ({lng}) fuera del rango esperado para Bogotá {BOGOTA_LNG_RANGE}")
 
-    price_min, err = parse_float(raw["price_min"], "price_min")
-    if err:
-        result.errors.append(err)
-    elif price_min < 0:
-        result.errors.append("price_min no puede ser negativo")
+    price_min = None
+    if str(raw.get("price_min", "")).strip():
+        price_min, err = parse_float(raw["price_min"], "price_min")
+        if err:
+            result.errors.append(err)
+        elif price_min < 0:
+            result.errors.append("price_min no puede ser negativo")
 
-    price_max, err = parse_float(raw["price_max"], "price_max")
-    if err:
-        result.errors.append(err)
-    elif price_max < 0:
-        result.errors.append("price_max no puede ser negativo")
+    price_max = None
+    if str(raw.get("price_max", "")).strip():
+        price_max, err = parse_float(raw["price_max"], "price_max")
+        if err:
+            result.errors.append(err)
+        elif price_max < 0:
+            result.errors.append("price_max no puede ser negativo")
 
     if price_min is not None and price_max is not None and price_min > price_max:
         result.errors.append(f"price_min ({price_min}) no puede ser mayor que price_max ({price_max})")
 
-    schedule_json, schedule_warnings, err = parse_schedule(raw["schedule"])
-    if err:
-        result.errors.append(err)
-    else:
-        result.schedule_json = schedule_json
-        result.warnings.extend(schedule_warnings)
+    if str(raw.get("schedule", "")).strip():
+        schedule_json, schedule_warnings, err = parse_schedule(raw["schedule"])
+        if err:
+            result.errors.append(err)
+        else:
+            result.schedule_json = schedule_json
+            result.warnings.extend(schedule_warnings)
 
     description = raw["description"].strip()
     if len(description) < MIN_DESCRIPTION_LENGTH:
@@ -329,9 +338,14 @@ def generate_sql(valid_rows: list[RowResult]) -> str:
         lines.append(f"  {sql_str(raw['locality'].strip())},")
         lines.append(f"  {float(raw['lat'])},")
         lines.append(f"  {float(raw['lng'])},")
-        lines.append(f"  {float(raw['price_min'])},")
-        lines.append(f"  {float(raw['price_max'])},")
-        lines.append(f"  {sql_str(row.schedule_json)}::jsonb,")
+        # Vacío -> NULL, nunca 0: en price un 0 significaría "gratis" y en
+        # schedule un '{}' significaría "sin días de apertura".
+        price_min_raw = str(raw.get("price_min", "")).strip()
+        price_max_raw = str(raw.get("price_max", "")).strip()
+        lines.append(f"  {float(price_min_raw) if price_min_raw else 'null'},")
+        lines.append(f"  {float(price_max_raw) if price_max_raw else 'null'},")
+        schedule_sql = f"{sql_str(row.schedule_json)}::jsonb" if row.schedule_json else "null"
+        lines.append(f"  {schedule_sql},")
         lines.append(f"  {sql_str(raw['description'].strip())},")
         tags_sql = "array[" + ", ".join(sql_str(t) for t in row.tags) + "]" if row.tags else "'{}'"
         lines.append(f"  {tags_sql},")

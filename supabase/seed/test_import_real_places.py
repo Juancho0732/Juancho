@@ -15,6 +15,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from import_real_places import (  # noqa: E402
+    generate_sql,
     parse_schedule,
     resolve_category,
     validate_last_verified_at,
@@ -151,6 +152,19 @@ class ValidateRowTests(unittest.TestCase):
     def test_rechaza_coordenadas_fuera_de_bogota(self):
         result = validate_row(1, valid_raw_row(lat="40.7128", lng="-74.0060"))
         self.assertFalse(result.is_valid)
+
+    def test_acepta_schedule_y_precio_vacios(self):
+        """Hay lugares reales que no publican horario ni precio en ninguna fuente."""
+        result = validate_row(1, valid_raw_row(schedule="", price_min="", price_max=""))
+        self.assertTrue(result.is_valid, result.errors)
+
+    def test_schedule_y_precio_vacios_generan_null_y_no_cero(self):
+        """Vacío significa 'no se sabe', nunca 'gratis' ni 'sin días de apertura'."""
+        result = validate_row(1, valid_raw_row(schedule="", price_min="", price_max=""))
+        sql = generate_sql([result])
+        self.assertIn("null", sql)
+        self.assertNotIn("0.0,", sql)
+        self.assertNotIn("'{}'::jsonb", sql)
 
     def test_rechaza_precio_min_mayor_a_max(self):
         result = validate_row(1, valid_raw_row(price_min="90000", price_max="10000"))

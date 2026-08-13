@@ -141,12 +141,19 @@ export default function PlaceDetailScreen() {
           <PlaceMapPreview lat={place.lat} lng={place.lng} title={place.name} />
         </View>
 
-        {place.schedule ? (
-          <View style={styles.section}>
-            <Text variant="subtitle">Horario</Text>
+        <View style={styles.section}>
+          <Text variant="subtitle">Horario</Text>
+          {place.schedule ? (
             <ScheduleList schedule={place.schedule} />
-          </View>
-        ) : null}
+          ) : (
+            // schedule NULL no es "cerrado": es que el lugar no publica su
+            // horario en ninguna fuente verificable (pasa mucho en vida
+            // nocturna). Se dice explícitamente en vez de inventarlo.
+            <Text variant="body" color="textSecondary">
+              Horario no publicado — confirma con el lugar
+            </Text>
+          )}
+        </View>
 
         <View style={styles.section}>
           <Link href={{ pathname: '/place/[id]/reviews', params: { id: place.id } }}>
