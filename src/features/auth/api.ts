@@ -48,7 +48,7 @@ export async function signOut(): Promise<void> {
  * mensaje de éxito sin importar el resultado real de este llamado.
  *
  * `redirectTo` usa el esquema propio de la app (`app.config.ts`, scheme
- * "juancho") para que el enlace del correo, en el celular, abra la app
+ * "zone") para que el enlace del correo, en el celular, abra la app
  * directamente en /reset-password en vez de un navegador.
  */
 export async function requestPasswordReset(input: ForgotPasswordInput): Promise<void> {

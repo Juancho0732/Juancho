@@ -28,7 +28,7 @@ export default function SplashScreen() {
     <Screen>
       <View style={styles.center}>
         <Text variant="title" style={styles.brand}>
-          Juancho
+          Zone
         </Text>
         <Text variant="body" color="textSecondary" style={styles.tagline}>
           Dime qué quieres hacer, cuánto tienes y dónde estás.

@@ -7,25 +7,19 @@ import type { ExpoConfig } from 'expo/config';
  * Android que `expo prebuild`/EAS Build vuelcan en AndroidManifest.xml).
  */
 const config: ExpoConfig = {
-  name: 'Juancho',
-  slug: 'Juancho',
+  name: 'Zone',
+  slug: 'zone',
   version: '1.0.0',
   orientation: 'portrait',
   icon: './assets/icon.png',
-  scheme: 'juancho',
+  scheme: 'zone',
   userInterfaceStyle: 'light',
   ios: {
     supportsTablet: true,
-    // PLACEHOLDER -- REQUIERE DECISIÓN HUMANA: "com.example.*" es el prefijo
-    // que usa el propio Expo para identificadores sin definir todavía; no es
-    // un identificador real ni reservado para este proyecto. Un build con
-    // este valor puede generarse (para probar el pipeline) pero NO puede
-    // subirse a App Store Connect -- ahí sí hace falta el identificador
-    // definitivo, decidido por el equipo (normalmente ligado al dominio de
-    // la organización, ej. "com.juancho.app" solo si el equipo controla ese
-    // dominio/marca). Cambiar este valor después de la primera build interna
-    // requiere generar una build nueva, no hay problema en decidirlo tarde.
-    bundleIdentifier: 'com.example.juancho',
+    // Identificador definitivo, aprobado por el equipo junto con el nombre
+    // "Zone". Cambiarlo después de la primera build interna solo obliga a
+    // generar una build nueva; en App Store sí queda atado a la ficha.
+    bundleIdentifier: 'com.zone.app',
   },
   android: {
     adaptiveIcon: {
@@ -35,13 +29,10 @@ const config: ExpoConfig = {
       monochromeImage: './assets/android-icon-monochrome.png',
     },
     predictiveBackGestureEnabled: false,
-    // PLACEHOLDER -- REQUIERE DECISIÓN HUMANA: mismo caso que
-    // ios.bundleIdentifier arriba, ver ese comentario. En Android además es
-    // MÁS difícil de cambiar después de publicar en Google Play (el
-    // "application ID" queda fijo para siempre una vez publicado), así que
-    // conviene decidirlo antes de la primera subida real a la Play Store
-    // (una build interna de prueba con este placeholder no ata nada).
-    package: 'com.example.juancho',
+    // Mismo identificador que ios.bundleIdentifier. Ojo: en Android el
+    // applicationId queda fijo PARA SIEMPRE una vez que se publica en Google
+    // Play, así que este valor ya no debería cambiar.
+    package: 'com.zone.app',
     // Requerido por react-native-maps en Android (Google Maps SDK). En iOS no
     // hace falta: usa Apple Maps por defecto, sin costo ni key. Ver README
     // "Mapas (Fase 5)" para cómo conseguir esta key.

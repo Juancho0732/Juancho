@@ -1,4 +1,4 @@
-# Juancho — App de descubrimiento de planes (Bogotá)
+# Zone — App de descubrimiento de planes (Bogotá)
 
 App móvil que responde "¿qué puedo hacer?": el usuario describe lo que busca en lenguaje
 natural (presupuesto, compañía, ubicación, ocasión) y la app recomienda lugares reales que
@@ -132,7 +132,7 @@ un build real):
    consumiendo la cuota/facturación del proyecto de Google Cloud sin límite.
 
 **Actualizado (preparación para beta real):** `app.config.ts` ya define `android.package` /
-`ios.bundleIdentifier` como `com.example.juancho` — **placeholder explícito, no un identificador
+`ios.bundleIdentifier` como `com.zone.app` — **identificador definitivo, aprobado junto con el nombre
 definitivo** (`com.example.*` es el prefijo que el propio Expo usa para "todavía sin decidir").
 Sirve para poder generar un build de prueba (confirmado con `expo prebuild` — genera proyectos
 Android/iOS válidos) y para que `eas.json` (ya existe, perfiles `development`/`preview`/
@@ -160,7 +160,7 @@ evidencia de cada verificación):
 - HECHO — proyecto Supabase real creado por el equipo, 13 migraciones aplicadas y verificadas
   (schema, RLS, RPCs, constraints, categorías reales).
 - HECHO — Edge Function `ai-search` desplegada y respondiendo.
-- HECHO — Redirect URL de recuperación de contraseña (`juancho://reset-password`) configurado en
+- HECHO — Redirect URL de recuperación de contraseña (`zone://reset-password`) configurado en
   Supabase Auth.
 - HECHO — RLS, `CHECK` constraints, cascadas, RPCs, Auth (login/registro real) y `ai-search`
   verificados contra el proyecto real con datos de prueba desechables, creados y eliminados en la
@@ -170,7 +170,7 @@ evidencia de cada verificación):
   verificado), pero no usa IA real todavía.
 - REQUIERE DECISIÓN DEL EQUIPO — si la confirmación de correo debe ser obligatoria antes del primer
   login (hoy sí lo es, el valor por defecto de Supabase).
-- REQUIERE DECISIÓN DEL EQUIPO — reemplazar el placeholder `com.example.juancho`
+- HECHO — identificador definitivo `com.zone.app` (nombre de la app: Zone)
   (`android.package`/`ios.bundleIdentifier`) por el identificador definitivo, y obtener/restringir
   una API key de Google Maps real para ese package name (`eas.json` con perfiles de build ya
   existe, no falta crearlo).
@@ -359,7 +359,7 @@ por correo, el registro no deja sesión iniciada de inmediato — la pantalla lo
 
 Flujo estándar de Supabase Auth con PKCE (`flowType: 'pkce'` en `services/supabase/client.ts`):
 el enlace de recuperación llega como `?code=...` (parámetro de query normal, igual en web y en el
-deep link nativo `juancho://reset-password?code=...`) en vez de un fragmento `#access_token=...` —
+deep link nativo `zone://reset-password?code=...`) en vez de un fragmento `#access_token=...` —
 más simple de leer desde `expo-router` (`useLocalSearchParams`) y no expone tokens en la URL ni en
 el historial del navegador/correo.
 
