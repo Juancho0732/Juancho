@@ -8,7 +8,7 @@ begin;
 insert into public.places
   (id, name, category_id, address, locality, lat, lng, price_min, price_max, schedule, description, tags, is_mock, source, last_verified_at)
 values (
-  'aa6f977e-6ea6-4eb9-a14e-4494bdeb0420'::uuid,
+  'a6aa093b-00ca-4e2b-907b-7e8647d8dc81'::uuid,
   'El Cielo',
   (select id from public.categories where name = 'Restaurantes'),
   'Calle 70 #4-47',
@@ -18,7 +18,7 @@ values (
   180000.0,
   355320.0,
   '{"mar_mie": "06:00-23:00", "jue_sab": "12:00-23:00", "dom": "12:00-17:00", "lun": "06:00-22:00"}'::jsonb,
-  'Restaurante de alta cocina colombiana con técnicas de gastronomía molecular, menú de degustación de varios tiempos que cambia cada cuatro meses.',
+  'Restaurante de alta cocina colombiana con técnicas de gastronomía molecular, menú de degustación de varios tiempos que cambia cada cuatro meses. El rango de precio indicado corresponde al menú de degustación de referencia, no a un rango típico de gasto general por persona.',
   array['alta_cocina', 'menu_degustacion'],
   false,
   'https://elcielo.com.co/bogota/',
@@ -29,7 +29,7 @@ values (
 insert into public.places
   (id, name, category_id, address, locality, lat, lng, price_min, price_max, schedule, description, tags, is_mock, source, last_verified_at)
 values (
-  '53900b85-cd7c-4cbf-89c3-6f85789e388c'::uuid,
+  '84329911-a624-4a1d-97f7-c7a86886e1b4'::uuid,
   'Abasto',
   (select id from public.categories where name = 'Restaurantes'),
   'Calle 118 #5-41',
@@ -50,7 +50,7 @@ values (
 insert into public.places
   (id, name, category_id, address, locality, lat, lng, price_min, price_max, schedule, description, tags, is_mock, source, last_verified_at)
 values (
-  '92444c07-c176-4a0d-922e-b8d71cb6330b'::uuid,
+  '95576cea-1da2-4914-a244-dedd6d7e1d2d'::uuid,
   'Mesa Franca',
   (select id from public.categories where name = 'Restaurantes'),
   'Calle 61 #5-56',
@@ -71,7 +71,7 @@ values (
 insert into public.places
   (id, name, category_id, address, locality, lat, lng, price_min, price_max, schedule, description, tags, is_mock, source, last_verified_at)
 values (
-  '2d2fd7ef-2f4e-465f-912a-02bb90ada51e'::uuid,
+  'c3d499a6-8a4c-4c59-b5ed-4c3485ac39ca'::uuid,
   'Central Cevichería (Zona T)',
   (select id from public.categories where name = 'Restaurantes'),
   'Carrera 13 #85-14',
@@ -92,7 +92,7 @@ values (
 insert into public.places
   (id, name, category_id, address, locality, lat, lng, price_min, price_max, schedule, description, tags, is_mock, source, last_verified_at)
 values (
-  '81b98c6c-834c-4887-8c65-443e60caa98d'::uuid,
+  '42845bee-bb28-4914-aa9c-f2e6f446bb7d'::uuid,
   'Crepes & Waffles (Zona T)',
   (select id from public.categories where name = 'Restaurantes'),
   'Carrera 12A #83-40',
@@ -113,7 +113,7 @@ values (
 insert into public.places
   (id, name, category_id, address, locality, lat, lng, price_min, price_max, schedule, description, tags, is_mock, source, last_verified_at)
 values (
-  '63ab08b3-b9f3-4eb2-8ab6-d7e6afa22427'::uuid,
+  '36fa35bd-f917-41bd-ad28-a9d4b7862454'::uuid,
   'Apache Rooftop Bar',
   (select id from public.categories where name = 'Bares y Rooftops'),
   'Carrera 11 #93-77',
@@ -134,13 +134,13 @@ values (
 insert into public.places
   (id, name, category_id, address, locality, lat, lng, price_min, price_max, schedule, description, tags, is_mock, source, last_verified_at)
 values (
-  '79f000a3-78d5-48fb-8ccf-b4fc345fb180'::uuid,
+  '3120f452-d1f9-40b8-a065-e393781153b6'::uuid,
   'Bogotá Beer Company (Parque 93)',
   (select id from public.categories where name = 'Bares y Rooftops'),
   'Carrera 11A #93A-94',
   'Zona Rosa',
-  4.676768,
-  -74.0482874,
+  4.6758524,
+  -74.0476984,
   30000.0,
   50000.0,
   '{"lun_jue": "12:30-23:00", "vie_sab": "12:30-01:00", "dom": "12:30-22:00"}'::jsonb,
@@ -155,7 +155,7 @@ values (
 insert into public.places
   (id, name, category_id, address, locality, lat, lng, price_min, price_max, schedule, description, tags, is_mock, source, last_verified_at)
 values (
-  '4eb8c549-2512-4653-8ebb-4add5c15930a'::uuid,
+  'bc76b097-9447-4cf7-bb7d-b7491b164910'::uuid,
   'Metrónomo Bar',
   (select id from public.categories where name = 'Bares y Rooftops'),
   'Calle 67 #5-20',
@@ -176,7 +176,7 @@ values (
 insert into public.places
   (id, name, category_id, address, locality, lat, lng, price_min, price_max, schedule, description, tags, is_mock, source, last_verified_at)
 values (
-  '3d5e2bfe-ab68-4a76-8b3a-67acd0d241cc'::uuid,
+  '4f4c1fdf-8853-43a6-8fd3-63daecb6e1c2'::uuid,
   'Café San Alberto (Usaquén)',
   (select id from public.categories where name = 'Cafés'),
   'Calle 117 #6A-47',
@@ -197,7 +197,7 @@ values (
 insert into public.places
   (id, name, category_id, address, locality, lat, lng, price_min, price_max, schedule, description, tags, is_mock, source, last_verified_at)
 values (
-  'db72585c-fede-4fc8-a7ff-ba042d66e8a5'::uuid,
+  'e49683ab-1399-4709-b314-074f3bd4a50b'::uuid,
   'Varietale (Candelaria)',
   (select id from public.categories where name = 'Cafés'),
   'Calle 12 #1-20',
@@ -218,7 +218,7 @@ values (
 insert into public.places
   (id, name, category_id, address, locality, lat, lng, price_min, price_max, schedule, description, tags, is_mock, source, last_verified_at)
 values (
-  '89f368d0-30ed-407e-aa26-be69502e8c5b'::uuid,
+  '0f66063f-fba5-43c3-a38e-1db954ce72c7'::uuid,
   'Museo del Oro',
   (select id from public.categories where name = 'Cultura y Museos'),
   'Carrera 6 #15-88',
@@ -228,7 +228,7 @@ values (
   0.0,
   8000.0,
   '{"mar_sab": "09:00-17:00", "dom": "10:00-17:00"}'::jsonb,
-  'Museo del Banco de la República con la mayor colección de orfebrería prehispánica del mundo. Entrada gratuita los domingos. Cerrado los lunes.',
+  'Museo del Banco de la República dedicado a la orfebrería y otras colecciones arqueológicas prehispánicas de Colombia. Entrada gratuita los domingos. Cerrado los lunes.',
   array['museo', 'entrada_gratis_domingo'],
   false,
   'https://www.banrepcultural.org/bogota/museo-del-oro/programa-tu-visita',
@@ -239,7 +239,7 @@ values (
 insert into public.places
   (id, name, category_id, address, locality, lat, lng, price_min, price_max, schedule, description, tags, is_mock, source, last_verified_at)
 values (
-  'a27e553a-4c96-415f-a402-a7ba7ea387eb'::uuid,
+  '870d7a6a-1fa4-4d65-b5c7-a3e83c52c0e7'::uuid,
   'Museo Nacional de Colombia',
   (select id from public.categories where name = 'Cultura y Museos'),
   'Carrera 7 #28-66',
@@ -249,7 +249,7 @@ values (
   0.0,
   3000.0,
   '{"mar_dom": "09:00-17:00"}'::jsonb,
-  'El museo más antiguo de Colombia, con colecciones de arte, historia y arqueología nacional. Gratis domingos y miércoles de 3 a 5pm.',
+  'Uno de los museos más antiguos de América, con colecciones de arte, historia y arqueología de Colombia. Gratis domingos y miércoles de 3 a 5pm.',
   array['museo'],
   false,
   'https://bogota.gov.co/mi-ciudad/cultura-recreacion-y-deporte/horarios-y-precios-de-entrada-los-museos-de-bogota-foto',
@@ -260,7 +260,7 @@ values (
 insert into public.places
   (id, name, category_id, address, locality, lat, lng, price_min, price_max, schedule, description, tags, is_mock, source, last_verified_at)
 values (
-  'a9860820-c367-4b99-9b96-cf2354213c15'::uuid,
+  '76271f11-8a90-4eb8-ba82-283492716c70'::uuid,
   'Museo Botero',
   (select id from public.categories where name = 'Cultura y Museos'),
   'Calle 11 #4-41',
@@ -281,11 +281,11 @@ values (
 insert into public.places
   (id, name, category_id, address, locality, lat, lng, price_min, price_max, schedule, description, tags, is_mock, source, last_verified_at)
 values (
-  'ed608309-4163-4e6e-8394-03a17d1b3b8d'::uuid,
+  '5bc3443d-42ca-456a-ab34-ed6715e620de'::uuid,
   'Museo de Arte Moderno de Bogotá (MAMBO)',
   (select id from public.categories where name = 'Cultura y Museos'),
   'Calle 24 #6-00',
-  'Candelaria',
+  'Los Mártires',
   4.6213776,
   -74.0803611,
   8000.0,
@@ -302,7 +302,7 @@ values (
 insert into public.places
   (id, name, category_id, address, locality, lat, lng, price_min, price_max, schedule, description, tags, is_mock, source, last_verified_at)
 values (
-  'fa91a1e7-8eb3-4597-8699-d2c3d67ec4ff'::uuid,
+  'd9dd4bb6-0162-48e4-a668-720d4f42bf17'::uuid,
   'Museo de Bogotá',
   (select id from public.categories where name = 'Cultura y Museos'),
   'Calle 10 #3-61',
@@ -323,7 +323,7 @@ values (
 insert into public.places
   (id, name, category_id, address, locality, lat, lng, price_min, price_max, schedule, description, tags, is_mock, source, last_verified_at)
 values (
-  'caf5a85c-985d-40f6-9395-e6e9815746f5'::uuid,
+  'bbf112fe-42f0-4e50-b4fe-919e99e5279a'::uuid,
   'Museo de la Independencia - Casa del Florero',
   (select id from public.categories where name = 'Cultura y Museos'),
   'Carrera 7 #11-28',
@@ -344,7 +344,7 @@ values (
 insert into public.places
   (id, name, category_id, address, locality, lat, lng, price_min, price_max, schedule, description, tags, is_mock, source, last_verified_at)
 values (
-  'cc753050-b9db-49f7-80e5-924159ea8b23'::uuid,
+  'bebab514-a999-4a08-bf30-4aefaf81c643'::uuid,
   'Parque Metropolitano Simón Bolívar',
   (select id from public.categories where name = 'Aire Libre y Parques'),
   'Avenida Carrera 68 #63-13',
@@ -361,32 +361,11 @@ values (
   '2026-08-12'::timestamptz
 );
 
--- Fila 18: Parque Nacional Enrique Olaya Herrera
+-- Fila 18: Parque de Usaquén
 insert into public.places
   (id, name, category_id, address, locality, lat, lng, price_min, price_max, schedule, description, tags, is_mock, source, last_verified_at)
 values (
-  '43709b96-e78e-4dd8-a606-c5da730f1c4e'::uuid,
-  'Parque Nacional Enrique Olaya Herrera',
-  (select id from public.categories where name = 'Aire Libre y Parques'),
-  'Carrera 7 con Calle 39',
-  'Chapinero',
-  4.6221748,
-  -74.0629696,
-  0.0,
-  0.0,
-  '{"lun_sab": "04:00-23:00", "dom": "05:00-22:00"}'::jsonb,
-  'Parque histórico en el límite entre Chapinero y el centro de Bogotá, con zonas verdes, canchas deportivas y senderos. Entrada libre.',
-  array['parque', 'entrada_gratis'],
-  false,
-  'https://www.idrd.gov.co/parques-y-escenarios',
-  '2026-08-12'::timestamptz
-);
-
--- Fila 19: Parque de Usaquén
-insert into public.places
-  (id, name, category_id, address, locality, lat, lng, price_min, price_max, schedule, description, tags, is_mock, source, last_verified_at)
-values (
-  '0b0c5092-3f01-4c07-9707-3351b0cd61b5'::uuid,
+  '711ceab5-f9c3-48cf-aab3-8ff74b4c990c'::uuid,
   'Parque de Usaquén',
   (select id from public.categories where name = 'Aire Libre y Parques'),
   'Carrera 6A #119B-05',
@@ -403,11 +382,11 @@ values (
   '2026-08-12'::timestamptz
 );
 
--- Fila 20: Parque Recreodeportivo El Salitre
+-- Fila 19: Parque Recreodeportivo El Salitre
 insert into public.places
   (id, name, category_id, address, locality, lat, lng, price_min, price_max, schedule, description, tags, is_mock, source, last_verified_at)
 values (
-  '90806bf1-31ef-4adc-ac79-0785833a3b63'::uuid,
+  '1090eb50-bab8-458b-92f9-636ad3118c85'::uuid,
   'Parque Recreodeportivo El Salitre',
   (select id from public.categories where name = 'Aire Libre y Parques'),
   'Carrera 60 #63-75',
@@ -424,53 +403,11 @@ values (
   '2026-08-12'::timestamptz
 );
 
--- Fila 21: Theatron
+-- Fila 20: Cantores Lounge
 insert into public.places
   (id, name, category_id, address, locality, lat, lng, price_min, price_max, schedule, description, tags, is_mock, source, last_verified_at)
 values (
-  '1fdf37b3-13df-4cc4-ae85-7f422211bc2d'::uuid,
-  'Theatron',
-  (select id from public.categories where name = 'Vida Nocturna'),
-  'Calle 58 Bis #10-32',
-  'Chapinero',
-  4.644768,
-  -74.0636913,
-  20000.0,
-  55000.0,
-  '{"jue_sab": "21:00-03:00"}'::jsonb,
-  'La discoteca LGBT+ más grande de Latinoamérica, con 20 ambientes musicales distintos bajo un mismo techo.',
-  array['lgbt', 'discoteca'],
-  false,
-  'https://en.wikipedia.org/wiki/Theatron_(club)',
-  '2026-08-12'::timestamptz
-);
-
--- Fila 22: Scape Games (Galerías)
-insert into public.places
-  (id, name, category_id, address, locality, lat, lng, price_min, price_max, schedule, description, tags, is_mock, source, last_verified_at)
-values (
-  'bd10c24a-07df-4a03-be5f-a96d2bc260d4'::uuid,
-  'Scape Games (Galerías)',
-  (select id from public.categories where name = 'Planes con Amigos'),
-  'Transversal 24 #53C-56',
-  'Teusaquillo',
-  4.6425588,
-  -74.0728283,
-  35000.0,
-  50000.0,
-  '{"lun_vie": "14:00-21:00", "sab": "11:00-21:00", "dom": "11:00-19:00"}'::jsonb,
-  'Escape room con 4 salas temáticas (hospital psiquiátrico, invasión zombie, campamento nazi, naufragio del Titanic), 60 minutos por partida.',
-  array['escape_room'],
-  false,
-  'https://worldofescapes.co/bogota',
-  '2026-08-12'::timestamptz
-);
-
--- Fila 23: Cantores Lounge
-insert into public.places
-  (id, name, category_id, address, locality, lat, lng, price_min, price_max, schedule, description, tags, is_mock, source, last_verified_at)
-values (
-  '16d15fc5-26f2-48ab-977c-4c1f01a5eded'::uuid,
+  'b95deb6f-e3a8-4c66-90eb-7a903935d058'::uuid,
   'Cantores Lounge',
   (select id from public.categories where name = 'Planes con Amigos'),
   'Calle 45 #7-16',
@@ -487,11 +424,11 @@ values (
   '2026-08-12'::timestamptz
 );
 
--- Fila 24: Relier: Juegos de Mesa
+-- Fila 21: Relier: Juegos de Mesa
 insert into public.places
   (id, name, category_id, address, locality, lat, lng, price_min, price_max, schedule, description, tags, is_mock, source, last_verified_at)
 values (
-  'd79c4aec-15e6-4e59-9077-5263f24c6875'::uuid,
+  '91582cf4-9017-4bee-a0d6-f6788da2034d'::uuid,
   'Relier: Juegos de Mesa',
   (select id from public.categories where name = 'Planes con Amigos'),
   'Carrera 13 #118A-32',
@@ -508,11 +445,11 @@ values (
   '2026-08-12'::timestamptz
 );
 
--- Fila 25: Momentino Wine Bar
+-- Fila 22: Momentino Wine Bar
 insert into public.places
   (id, name, category_id, address, locality, lat, lng, price_min, price_max, schedule, description, tags, is_mock, source, last_verified_at)
 values (
-  '729bd9e1-3094-495a-b4c2-d3db5bcf2842'::uuid,
+  '483c2fa3-bba4-4bff-aa54-e83c70795754'::uuid,
   'Momentino Wine Bar',
   (select id from public.categories where name = 'Planes en Pareja'),
   'Calle 61 #5-30',
@@ -529,32 +466,11 @@ values (
   '2026-08-12'::timestamptz
 );
 
--- Fila 26: Presence Spa (Hotel Marriott Bogotá)
+-- Fila 23: Catación Pública (Usaquén)
 insert into public.places
   (id, name, category_id, address, locality, lat, lng, price_min, price_max, schedule, description, tags, is_mock, source, last_verified_at)
 values (
-  '0cba0c5c-416e-4724-859a-21e42510da06'::uuid,
-  'Presence Spa (Hotel Marriott Bogotá)',
-  (select id from public.categories where name = 'Planes en Pareja'),
-  'Avenida El Dorado #69B-53',
-  'Salitre',
-  4.6627647,
-  -74.1096806,
-  180000.0,
-  1190000.0,
-  '{"lun_dom": "08:00-20:00"}'::jsonb,
-  'Spa del Hotel Marriott con tratamientos en pareja, masajes, hidroterapia y aromaterapia.',
-  array['spa', 'masajes'],
-  false,
-  'https://theplacetobe.lat/spas/spa-marriott-bogota/',
-  '2026-08-12'::timestamptz
-);
-
--- Fila 27: Catación Pública (Usaquén)
-insert into public.places
-  (id, name, category_id, address, locality, lat, lng, price_min, price_max, schedule, description, tags, is_mock, source, last_verified_at)
-values (
-  '532ff352-d8bb-418f-bf6a-6ef33b6a9f59'::uuid,
+  '8036ac7b-a9ae-4c35-bb25-a6df073c42b1'::uuid,
   'Catación Pública (Usaquén)',
   (select id from public.categories where name = 'Experiencias y Talleres'),
   'Calle 120A #3A-47',
@@ -571,11 +487,11 @@ values (
   '2026-08-12'::timestamptz
 );
 
--- Fila 28: Alharaca Taller de Cerámica
+-- Fila 24: Alharaca Taller de Cerámica
 insert into public.places
   (id, name, category_id, address, locality, lat, lng, price_min, price_max, schedule, description, tags, is_mock, source, last_verified_at)
 values (
-  '5fbe6644-0e04-4782-b3ef-bbd7fef00a85'::uuid,
+  'bcae8d22-2e68-4b0c-920a-096d44a6ea21'::uuid,
   'Alharaca Taller de Cerámica',
   (select id from public.categories where name = 'Experiencias y Talleres'),
   'Calle 64 #9A-32',
@@ -592,11 +508,11 @@ values (
   '2026-08-12'::timestamptz
 );
 
--- Fila 29: Bogotá Bike Tours
+-- Fila 25: Bogotá Bike Tours
 insert into public.places
   (id, name, category_id, address, locality, lat, lng, price_min, price_max, schedule, description, tags, is_mock, source, last_verified_at)
 values (
-  'c6b58f2e-9041-4e4d-b5e1-1c83a809991b'::uuid,
+  '09fa2010-7347-4df3-9313-66264a1d9526'::uuid,
   'Bogotá Bike Tours',
   (select id from public.categories where name = 'Experiencias y Talleres'),
   'Carrera 3 #12-42',
@@ -605,19 +521,19 @@ values (
   -74.0699296,
   109000.0,
   109000.0,
-  '{"lun_dom": "10:30-15:30"}'::jsonb,
-  'Tour guiado en bicicleta por el centro histórico de Bogotá, arte urbano y mercados tradicionales. Salidas diarias a las 10:30am y 1:30pm.',
+  '{"salida_manana": "10:30", "salida_tarde": "13:30"}'::jsonb,
+  'Tour guiado en bicicleta por el centro histórico de Bogotá, arte urbano y mercados tradicionales. No es un horario de apertura continuo: dos salidas diarias fijas, a las 10:30 a.m. y a la 1:30 p.m.',
   array['bicicleta', 'tour'],
   false,
   'https://www.bogotabiketours.com/',
   '2026-08-12'::timestamptz
 );
 
--- Fila 30: Bendito Tejo
+-- Fila 26: Bendito Tejo
 insert into public.places
   (id, name, category_id, address, locality, lat, lng, price_min, price_max, schedule, description, tags, is_mock, source, last_verified_at)
 values (
-  '5a979cb8-9b6a-4a36-ad1b-9e1d80e27a78'::uuid,
+  '90dc0737-77a0-435e-80ae-a419ede5c0fb'::uuid,
   'Bendito Tejo',
   (select id from public.categories where name = 'Deportes y Recreación'),
   'Calle 138 #47-28',
@@ -627,18 +543,18 @@ values (
   40000.0,
   60000.0,
   '{"mar_jue": "16:00-22:00", "vie_sab": "13:00-02:00", "dom": "13:00-20:00"}'::jsonb,
-  'Cancha de tejo y bolirana con servicio de comida rápida, hasta 8 personas por cancha.',
+  'Cancha de tejo y bolirana con servicio de comida rápida.',
   array['tejo', 'juego_tradicional'],
   false,
   'https://benditotejo.co/',
   '2026-08-12'::timestamptz
 );
 
--- Fila 31: Betaclimb (sede Calle 72)
+-- Fila 27: Betaclimb (sede Calle 72)
 insert into public.places
   (id, name, category_id, address, locality, lat, lng, price_min, price_max, schedule, description, tags, is_mock, source, last_verified_at)
 values (
-  '2c55612b-2623-4a74-aef4-8efe7c651ca4'::uuid,
+  '23b8ce62-3ba5-4b97-bc4a-c41b6401bc45'::uuid,
   'Betaclimb (sede Calle 72)',
   (select id from public.categories where name = 'Deportes y Recreación'),
   'Calle 72 #20-73',
@@ -655,11 +571,11 @@ values (
   '2026-08-12'::timestamptz
 );
 
--- Fila 32: Locos X Pádel
+-- Fila 28: Locos X Pádel
 insert into public.places
   (id, name, category_id, address, locality, lat, lng, price_min, price_max, schedule, description, tags, is_mock, source, last_verified_at)
 values (
-  '1df3931e-e900-4ac4-b87c-0de52383f1cc'::uuid,
+  '9e609abf-f8fc-42df-9dd5-0fc73cc69e3f'::uuid,
   'Locos X Pádel',
   (select id from public.categories where name = 'Deportes y Recreación'),
   'Calle 147 #58-04',

@@ -136,3 +136,76 @@ PENDIENTE: Tejo Turmequé (Calle 57 #13-10, Chapinero) -- precio confirmado (com
 PENDIENTE: Armando Records (Avenida Calle 85 #14-46, Zona Rosa) -- cover confirmado (30.000 COP), pero sin horario específico publicado (patrón recurrente en Vida Nocturna: la mayoría de estos lugares no publican horario fijo, dependen de anuncios por Instagram/WhatsApp evento por evento).
 
 === FIN DE INVESTIGACIÓN. Total aceptados provisionalmente: 34. Total pendientes documentados: 13. Total descartados (cerrados): 1. ===
+
+## Ronda 2: correcciones de calidad (auditoría de 10 criterios + 14 puntos del usuario)
+
+Tras la auditoría final de calidad, el usuario pidió 14 correcciones puntuales
+sobre el lote de 32 filas. Resultado: 28 filas quedan en
+`real_places_batch1_bogota.csv`, 4 salen (documentadas en
+`real_places_batch1_bogota_PENDING_REVIEW.md`).
+
+- **MAMBO:** localidad corregida de "Candelaria" a "Los Mártires" (Calle 24
+  #6-00 cae en Los Mártires según reverse-geocoding; coordenadas ya estaban
+  correctas, no se tocaron).
+- **Presence Spa:** eliminado del lote -- "Salitre" no es una localidad
+  administrativa válida. No se repuso. Ver PENDING_REVIEW.md.
+- **Bogotá Beer Company (Parque 93):** coordenadas corregidas de
+  `4.676768,-74.0482874` (aproximación al Parque de la 93 en general) a
+  `4.6758524,-74.0476984` (match puntual de POI en OSM para "Bogota Beer
+  Company, Carrera 11A #93A-94", coincide exactamente con la dirección
+  usada).
+- **Parque Nacional:** no se encontró coordenada puntual verificable para
+  "Carrera 7 con Calle 39" en Nominatim (solo centroides de barrio/parque).
+  Sacado del lote como REVISAR. Localidad correcta identificada (Santa Fe)
+  y documentada en PENDING_REVIEW.md para cuando se retome.
+- **Scape Games:** no se encontró ninguna coincidencia de POI ni de
+  dirección exacta en Nominatim. Sacado del lote como REVISAR.
+- **Museo del Oro:** se verificó contra la página fuente
+  (banrepcultural.org) que NO afirma "la mayor colección de orfebrería
+  prehispánica del mundo" -- la página solo dice que el museo "preserva
+  colecciones arqueológicas". Descripción reformulada sin la afirmación no
+  respaldada.
+- **Museo Nacional:** se verificó contra la fuente (bogota.gov.co) que dice
+  "uno de los más antiguos de América", no "el museo más antiguo de
+  Colombia". Descripción corregida para reflejar la afirmación real de la
+  fuente.
+- **Museo Botero:** se verificó contra la fuente citada, que sí dice
+  explícitamente "Expone las obras donadas por el escultor Fernando
+  Botero". Afirmación respaldada -- sin cambios.
+- **Casa del Florero:** se verificó contra la fuente citada, que sí dice
+  explícitamente "sucesos que desataron la revuelta del 20 de julio de
+  1810". Afirmación respaldada -- sin cambios.
+- **Parque Simón Bolívar:** se verificó contra la fuente citada, que sí
+  dice explícitamente "con una extensión de 113 hectáreas". Afirmación
+  respaldada -- sin cambios.
+- **Bendito Tejo:** se verificó contra benditotejo.co (fetch directo) que
+  la página NO menciona ningún número de personas por cancha (solo mención
+  de "40 personas" para eventos empresariales completos, no por cancha).
+  El "hasta 8 personas por cancha" del CSV original probablemente venía del
+  artículo genérico de Pulzo sobre varios sitios de tejo, no de una fuente
+  específica de Bendito Tejo -- eliminado por completo de la descripción,
+  tal como pidió el usuario.
+- **Theatron:** el horario `jue_sab=21:00-03:00` era inferido de la
+  estructura de precios del cover (ya documentado arriba como nota desde la
+  ronda 1), no un horario oficial publicado. Sin fuente oficial para
+  ninguna hora real, no hay forma honesta de rellenar el campo `schedule`
+  (obligatorio). Sacado del lote como REVISAR.
+- **Bogotá Bike Tours:** el `schedule` original (`lun_dom=10:30-15:30`) era
+  un rango inventado ("cubre desde la primera salida hasta el fin estimado
+  de la segunda", según la nota original de investigación) que no
+  representa horario de apertura real. Corregido a
+  `salida_manana=10:30;salida_tarde=13:30` -- dos puntos de hora reales y
+  verificados (no un rango), con advertencia esperada y no bloqueante del
+  importador porque no tiene forma "HH:MM-HH:MM". Descripción actualizada
+  para aclarar que no es horario de apertura continuo.
+- **El Cielo:** descripción actualizada para dejar explícito que
+  `price_min`/`price_max` corresponde al menú de degustación de referencia,
+  no a un rango típico de gasto general -- el campo `description` sí permite
+  esta aclaración sin necesitar cambios de esquema.
+
+Tras aplicar las 14 correcciones: `import_real_places.py` en dry-run sobre
+las 28 filas → 28 válidas, 0 rechazadas (solo advertencias no bloqueantes ya
+esperadas: horarios multi-franja de Mesa Franca/Alharaca, localidades no
+curadas de MAMBO/El Salitre, y el nuevo formato de Bogotá Bike Tours). Los
+29 tests de `test_import_real_places.py` pasan. No se ejecutó ningún INSERT
+contra Supabase.
