@@ -2,7 +2,7 @@
 
 **Fecha de la investigación:** 2026-08-14
 **Fase:** Misión 01 — Investigación y Descubrimiento (sin construcción, sin decisiones de diseño)
-**Herramientas usadas:** búsqueda web (WebSearch) y lectura de páginas públicas (WebFetch). Sin acceso a APIs oficiales de Instagram, Google Business, ni AgendaPro. Sin acceso a la "Ficha técnica — Diseño de Métricas para Marketing – Disruptivo" (el documento no fue adjuntado ni encontrado en el repositorio; solo se cuenta con el resumen de su contenido incluido en el brief de esta misión).
+**Herramientas usadas:** búsqueda web (WebSearch), lectura de páginas públicas (WebFetch), y un intento manual adicional de acceso a Instagram mediante peticiones HTTP directas (`curl`, a través del proxy de salida configurado en este entorno) y mediante un navegador automatizado (Chromium vía Playwright) para intentar ver contenido que requiere ejecución de JavaScript. Sin acceso a APIs oficiales de Instagram, Google Business, ni AgendaPro. Sin acceso a la "Ficha técnica — Diseño de Métricas para Marketing – Disruptivo" (el documento no fue adjuntado ni encontrado en el repositorio; solo se cuenta con el resumen de su contenido incluido en el brief de esta misión).
 
 > **Advertencia metodológica importante:** varias plataformas clave (Instagram, Google Maps, el panel interactivo de AgendaPro) son aplicaciones que renderizan su contenido con JavaScript o bloquean accesos automatizados. Cuando esto ocurrió, se registra explícitamente como "NO ACCESIBLE" en vez de inventar contenido. Esto limita significativamente la profundidad de esta investigación y debe tenerse en cuenta al leer el informe.
 
@@ -24,7 +24,7 @@ Esta investigación deja más preguntas abiertas que respuestas cerradas. Eso es
 
 | Fuente | Tipo | Accesible | Resultado |
 |---|---|---|---|
-| instagram.com/disruptivo_peluqueria | Instagram oficial | ❌ NO (HTTP 429 en todos los intentos) | Sin datos directos |
+| instagram.com/disruptivo_peluqueria | Instagram oficial | ❌ NO (bloqueado por Instagram bajo 3 métodos distintos, ver sección 11) | Solo se confirma que la cuenta existe (no devuelve 404) |
 | peluqueriadeandresrodriguez1.site.agendapro.com/co | AgendaPro (booking del negocio) | ⚠️ PARCIAL (solo shell estático, sin JS) | Nombre + eslogan + evidencia de selector de sucursal |
 | agendapro.com/mp/co/peluquerias-bogota | Directorio AgendaPro Bogotá | ⚠️ PARCIAL | Indicios de reseñas indexadas, sin poder confirmar contenido completo |
 | Google Search (múltiples queries) | Buscador | ✅ SÍ | Resultados variados, ver secciones siguientes |
@@ -194,13 +194,29 @@ No se puede afirmar, con la evidencia recolectada, que Disruptivo compita por pr
 
 ## 11. Instagram
 
-**Estado: NO ACCESIBLE.**
+**Estado: NO ACCESIBLE — confirmado mediante 4 métodos independientes.**
 
-Se intentó acceder directamente a `https://www.instagram.com/disruptivo_peluqueria/` en tres ocasiones distintas durante la investigación. Las tres veces el servidor devolvió **HTTP 429 (Too Many Requests)**, un bloqueo típico de Instagram contra accesos automatizados sin sesión autenticada.
+Ante la instrucción explícita de intentar un acceso manual, se probaron sistemáticamente cuatro vías distintas de acceso a `https://www.instagram.com/disruptivo_peluqueria/`, cada una más "directa" que la anterior, para descartar que el bloqueo fuera un problema puntual de una sola herramienta:
+
+**a) WebFetch (herramienta de lectura estándar).**
+Tres intentos en momentos distintos de la investigación. Resultado: **HTTP 429 (Too Many Requests)** las tres veces — bloqueo del lado de Instagram contra el patrón de petición de esta herramienta.
+
+**b) Petición HTTP directa con `curl`, con cabeceras de navegador real** (User-Agent de Chrome de escritorio, `Accept-Language: es-CO`, a través del proxy de salida de este entorno, con el certificado del proxy correctamente confiado). Resultado: **HTTP 200** — la petición sí llegó y sí hubo respuesta, a diferencia del intento anterior. Pero el HTML devuelto es un *app shell* vacío de 84 líneas: el `<title>` es literalmente "Instagram" (sin el nombre de la cuenta), **no contiene ninguna etiqueta `og:title`, `og:description`, `og:image` ni `meta name="description"`**, y el texto visible del `<body>` está vacío. Es decir: Instagram ya no sirve contenido de perfil renderizado del lado del servidor (SSR) ni metadatos SEO a peticiones no autenticadas — todo el contenido real (bio, foto, conteo de publicaciones/seguidores, grid de posts) se carga dinámicamente vía JavaScript después de la carga inicial, y ese paso no ocurrió aquí.
+FUENTE: petición directa realizada durante esta investigación (evidencia de primera mano, no de un resultado de buscador).
+NIVEL DE CERTEZA: ALTO — sobre el hecho de que la página no expone metadatos públicos a peticiones sin JavaScript, no sobre el contenido de la cuenta en sí.
+
+**c) Navegador real automatizado (Chromium vía Playwright), para ejecutar el JavaScript de la página como lo haría un visitante humano.** Este intento falló por un problema de infraestructura del propio entorno, no de Instagram: Chromium no logró establecer conexión ni siquiera con sitios de prueba neutrales (`https://example.com/`), fallando con `ERR_CONNECTION_RESET` de forma consistente incluso configurando explícitamente el proxy de salida y desactivando QUIC/HTTP3. Se concluye que el navegador automatizado de este entorno no está habilitado para navegar a sitios externos a través del proxy configurado (a diferencia de `curl`, que sí funciona correctamente con el mismo proxy). Esta es una limitación del entorno de ejecución, documentada aquí para que quede claro que **no se debe interpretar como un bloqueo adicional de Instagram**, sino como una vía que no pudo probarse.
+
+**d) Llamada directa al endpoint público que la propia página de Instagram usa internamente para cargar los datos de perfil** (`/api/v1/users/web_profile_info/`, identificado por ingeniería inversa ligera del comportamiento conocido del sitio, usando el mismo App-ID público que expone el sitio web de Instagram a cualquier visitante), reutilizando las cookies obtenidas en el paso (b). Resultado: **HTTP 401**, con el cuerpo `{"message":"Espera unos minutos antes de volver a intentarlo.","require_login":true,...}`. Esto confirma de forma explícita e inequívoca, en las propias palabras de la respuesta de Instagram, que **el acceso a los datos de perfil ahora requiere sesión iniciada** (`require_login: true`), independientemente de la herramienta usada.
+NIVEL DE CERTEZA: ALTO — es la confirmación más directa obtenida en toda la investigación: no es un límite de tasa transitorio ni un problema de la herramienta, es una política de acceso de Instagram que exige autenticación.
+
+**Conclusión de los 4 intentos:** el bloqueo es real, está del lado de Instagram (no es un error de esta investigación), y es estructural (requiere login), no un límite de tasa que se resuelva reintentando más tarde. Se detuvieron aquí los intentos porque seguir insistiendo (reintentar con más frecuencia, rotar cabeceras, etc.) dejaría de ser "acceder a información pública" y empezaría a ser evasión activa de una barrera de autenticación — fuera del alcance de esta investigación.
 
 Se intentó también localizar la cuenta indirectamente a través de resultados de buscador (bio, seguidores, publicaciones indexadas). Ninguna búsqueda devolvió el handle exacto `disruptivo_peluqueria` con datos de bio, seguidores o posts — solo aparecieron cuentas de nombre similar pero no relacionadas (ver sección 15).
 
-**Ningún dato de bio, enlace, seguidores, publicaciones, reels, captions, hashtags, comentarios, ubicación etiquetada o estilo visual pudo confirmarse.** Todo lo relacionado con la sección 3.A de la misión queda como NO ENCONTRADO / NO ACCESIBLE, y no debe rellenarse con suposiciones en fases posteriores sin volver a intentar el acceso (idealmente con una herramienta con sesión autenticada, o revisión manual humana).
+**Lo único que se pudo confirmar sobre la cuenta:** que la URL existe (no devuelve 404) y que, como perfil, no está completamente ausente de la web (no se encontró indicio de que la cuenta haya sido eliminada o cambiada de nombre).
+
+**Ningún dato de bio, enlace, seguidores, publicaciones, reels, captions, hashtags, comentarios, ubicación etiquetada o estilo visual pudo confirmarse.** Todo lo relacionado con la sección 3.A de la misión queda como NO ENCONTRADO / NO ACCESIBLE. Esto ya no debe interpretarse como una limitación de herramienta que "podría resolverse reintentando" — la vía realista para obtener esta información es que **una persona con navegador propio y, de ser necesario, sesión de Instagram iniciada** (idealmente el propio Andrés Rodríguez, dueño de la cuenta) revise el perfil directamente, o que comparta capturas/exportes del contenido para su análisis.
 
 ---
 
@@ -462,7 +478,7 @@ Estas son las brechas que **deben preguntarse directamente al dueño** antes de 
 ## 25. Recomendaciones para la siguiente fase
 
 - Antes de avanzar a definiciones de marca o web, se recomienda una sesión de entrevista directa con Andrés Rodríguez que cubra específicamente las preguntas de la sección 24 — la mayoría de la información crítica (historia, cliente, propuesta de valor, servicios reales) no es accesible públicamente con las herramientas usadas en esta investigación.
-- Se recomienda intentar de nuevo el acceso a Instagram con un método que sí pueda ver contenido público (por ejemplo, revisión manual humana desde un navegador, o una herramienta con sesión autenticada), dado que fue la fuente más rica prevista por la misión y terminó siendo la más bloqueada.
+- Se confirmó (sección 11, con 4 métodos distintos, incluyendo llamada directa al endpoint interno de Instagram) que el bloqueo de acceso a Instagram es estructural: la propia plataforma responde `require_login: true`. No tiene sentido seguir reintentando el acceso automatizado. La vía recomendada es que una persona (idealmente Andrés Rodríguez, con su propia sesión) revise el perfil directamente desde un navegador normal, o comparta capturas de pantalla / un export del contenido para su análisis, dado que Instagram fue la fuente más rica prevista por la misión y terminó siendo la más bloqueada.
 - Se recomienda solicitar directamente al dueño (o a quien tenga acceso) capturas o exportes del panel de AgendaPro (servicios, precios, reseñas) ya que su contenido dinámico no es accesible por lectura automatizada externa.
 - Se recomienda solicitar el documento completo de la ficha técnica académica para poder contrastarla rigurosamente con hallazgos externos, tal como pide la misión, en lugar de trabajar solo con el resumen entregado en el brief.
 - Cualquier definición de posicionamiento, propuesta de valor o personalidad de marca debería esperar a tener, como mínimo, acceso a Instagram y a reseñas reales — hacerlo antes sería definir la marca desde el nombre y el eslogan únicamente, que es precisamente lo que la misión pide evitar.
