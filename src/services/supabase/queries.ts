@@ -53,7 +53,21 @@ export type ListPlacesFilters = {
 const PLACE_LIST_COLUMNS = 'id, name, category_id, locality, price_min, price_max, rating_avg, review_count';
 
 export async function listPlaces(filters: ListPlacesFilters = {}): Promise<PlaceListItem[]> {
-  let query = supabase.from('places').select(PLACE_LIST_COLUMNS).eq('status', 'active');
+  let query = supabase.from('places').select(PLACE_LIST_COLUMNS);
+
+  if (filters.search) {
+    // Los operadores .or()/.ilike() de PostgREST usan `,()` como sintaxis de
+    // filtro; se limpian para que un término de búsqueda con esos caracteres
+    // no rompa el filtro ni se interprete como condiciones adicionales.
+    const safeTerm = filters.search.replace(/[,()%_]/g, ' ').trim();
+    if (safeTerm) {
+      query = query.or(`and(name.ilike.%${safeTerm}%,status.eq.active),and(description.ilike.%${safeTerm}%,status.eq.active)`);
+    } else {
+      query = query.eq('status', 'active');
+    }
+  } else {
+    query = query.eq('status', 'active');
+  }
 
   if (filters.locality) {
     query = query.eq('locality', filters.locality);
@@ -66,15 +80,6 @@ export async function listPlaces(filters: ListPlacesFilters = {}): Promise<Place
   }
   if (filters.minRating !== undefined) {
     query = query.gte('rating_avg', filters.minRating);
-  }
-  if (filters.search) {
-    // Los operadores .or()/.ilike() de PostgREST usan `,()` como sintaxis de
-    // filtro; se limpian para que un término de búsqueda con esos caracteres
-    // no rompa el filtro ni se interprete como condiciones adicionales.
-    const safeTerm = filters.search.replace(/[,()%]/g, ' ').trim();
-    if (safeTerm) {
-      query = query.or(`name.ilike.%${safeTerm}%,description.ilike.%${safeTerm}%`);
-    }
   }
 
   const limit = filters.limit ?? 30;
