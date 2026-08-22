@@ -21,7 +21,7 @@ export function MetricCard({ metricId, name, result, previousValue, interpretati
   return (
     <Link
       to={`/calculadoras/${metricId}`}
-      className="group flex flex-col gap-3 rounded-xl border border-(--color-border) bg-(--color-surface) p-5 hover:border-(--color-border-strong) hover:shadow-sm transition-all"
+      className="group flex flex-col gap-3 rounded-2xl border border-(--color-border) bg-(--color-surface) p-5 hover:border-(--color-border-strong) hover:shadow-sm transition-all"
     >
       <div className="flex items-start justify-between gap-2">
         <p className="text-[13px] font-medium text-(--color-ink-muted)">{name}</p>

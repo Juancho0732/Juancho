@@ -101,7 +101,7 @@ export function DashboardPage() {
 
 function EmptyState({ title, description, action }: { title: string; description: string; action?: { to: string; label: string } }) {
   return (
-    <div className="rounded-xl border border-dashed border-(--color-border-strong) bg-(--color-surface) px-6 py-14 text-center max-w-xl mx-auto">
+    <div className="rounded-2xl border border-dashed border-(--color-border-strong) bg-(--color-surface) px-6 py-14 text-center max-w-xl mx-auto">
       <p className="text-[15px] font-medium text-(--color-ink)">{title}</p>
       <p className="text-[13.5px] text-(--color-ink-muted) mt-2 leading-relaxed">{description}</p>
       {action && (

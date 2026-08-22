@@ -24,7 +24,7 @@ export function CalculatorsListPage() {
           if (metrics.length === 0) return null;
           return (
             <section key={category}>
-              <h2 className="text-[13px] font-semibold text-(--color-ink-faint) uppercase tracking-wide mb-3">
+              <h2 className="text-[13px] font-semibold text-(--color-ink-faint) font-mono uppercase tracking-widest mb-3">
                 {CATEGORY_LABELS[category]}
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -32,7 +32,7 @@ export function CalculatorsListPage() {
                   <Link
                     key={metric.id}
                     to={`/calculadoras/${metric.id}`}
-                    className="rounded-xl border border-(--color-border) bg-(--color-surface) p-4 hover:border-(--color-border-strong) hover:shadow-sm transition-all"
+                    className="rounded-2xl border border-(--color-border) bg-(--color-surface) p-4 hover:border-(--color-border-strong) hover:shadow-sm transition-all"
                   >
                     <p className="text-[14px] font-semibold text-(--color-ink)">{metric.shortName}</p>
                     <p className="text-[12.5px] text-(--color-ink-muted) mt-0.5">{metric.name}</p>

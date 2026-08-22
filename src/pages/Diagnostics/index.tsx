@@ -51,7 +51,7 @@ export function DiagnosticsPage() {
       <PageHeader title="Diagnóstico" subtitle={`${activeProject.name} · ${activeSnapshot.label}`} />
 
       {findings.length === 0 ? (
-        <div className="rounded-xl border border-(--color-good) bg-(--color-good-soft) px-5 py-6">
+        <div className="rounded-2xl border border-(--color-good) bg-(--color-good-soft) px-5 py-6">
           <p className="text-[14px] font-medium text-(--color-good)">No se detectaron problemas con los datos disponibles.</p>
           <p className="text-[13px] text-(--color-ink-muted) mt-1.5">
             A medida que añadas más datos (márgenes, churn, publicidad) el diagnóstico podrá evaluar más aspectos de tu negocio.
@@ -62,10 +62,10 @@ export function DiagnosticsPage() {
           {findings.map((finding) => (
             <div
               key={finding.id}
-              className={`rounded-xl bg-(--color-surface) border border-(--color-border) border-l-4 ${SEVERITY_BORDER[finding.severity]} p-4`}
+              className={`rounded-2xl bg-(--color-surface) border border-(--color-border) border-l-4 ${SEVERITY_BORDER[finding.severity]} p-4`}
             >
               <div className="flex items-center gap-2 mb-1">
-                <span className={`text-[11px] font-semibold uppercase tracking-wide ${SEVERITY_TEXT[finding.severity]}`}>
+                <span className={`text-[11px] font-semibold font-mono uppercase tracking-widest ${SEVERITY_TEXT[finding.severity]}`}>
                   {SEVERITY_LABELS[finding.severity]}
                 </span>
               </div>
@@ -86,7 +86,7 @@ export function DiagnosticsPage() {
 
 function EmptyPanel({ text, action }: { text: string; action?: boolean }) {
   return (
-    <div className="rounded-xl border border-dashed border-(--color-border-strong) bg-(--color-surface) px-6 py-14 text-center max-w-xl">
+    <div className="rounded-2xl border border-dashed border-(--color-border-strong) bg-(--color-surface) px-6 py-14 text-center max-w-xl">
       <p className="text-[13.5px] text-(--color-ink-muted)">{text}</p>
       {action && (
         <Link

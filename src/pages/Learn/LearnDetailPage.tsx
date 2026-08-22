@@ -27,7 +27,7 @@ export function LearnDetailPage() {
         <Section title="¿Qué significa?" text={education.whatItMeans} />
         <Section title="¿Cómo se calcula?" text={education.howToCalculate} />
         <Section title="¿Cómo interpretarlo?" text={education.howToInterpret} />
-        <div className="rounded-xl border border-(--color-border) bg-(--color-surface) p-5">
+        <div className="rounded-2xl border border-(--color-border) bg-(--color-surface) p-5">
           <p className="text-[13px] font-semibold text-(--color-ink) mb-2.5">Errores comunes</p>
           <ul className="list-disc pl-5 space-y-1.5">
             {education.commonMistakes.map((mistake, i) => (
@@ -51,7 +51,7 @@ export function LearnDetailPage() {
 
 function Section({ title, text }: { title: string; text: string }) {
   return (
-    <div className="rounded-xl border border-(--color-border) bg-(--color-surface) p-5">
+    <div className="rounded-2xl border border-(--color-border) bg-(--color-surface) p-5">
       <p className="text-[13px] font-semibold text-(--color-ink) mb-2">{title}</p>
       <p className="text-[13.5px] leading-relaxed text-(--color-ink-muted)">{text}</p>
     </div>

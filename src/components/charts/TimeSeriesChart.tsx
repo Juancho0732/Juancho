@@ -35,7 +35,7 @@ export function TimeSeriesChart({
   };
 
   return (
-    <div className="rounded-xl border border-(--color-border) bg-(--color-surface) p-5">
+    <div className="rounded-2xl border border-(--color-border) bg-(--color-surface) p-5">
       <p className="text-[13.5px] font-medium text-(--color-ink) mb-4">{title}</p>
       <div className="h-56">
         <ResponsiveContainer width="100%" height="100%">

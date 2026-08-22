@@ -162,7 +162,7 @@ export function ChartsPage() {
 
 function EmptyPanel({ text, action }: { text: string; action?: boolean }) {
   return (
-    <div className="rounded-xl border border-dashed border-(--color-border-strong) bg-(--color-surface) px-6 py-14 text-center max-w-xl">
+    <div className="rounded-2xl border border-dashed border-(--color-border-strong) bg-(--color-surface) px-6 py-14 text-center max-w-xl">
       <p className="text-[13.5px] text-(--color-ink-muted)">{text}</p>
       {action && (
         <Link

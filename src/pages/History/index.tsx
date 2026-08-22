@@ -46,7 +46,7 @@ export function HistoryPage() {
     <div>
       <PageHeader title="Historial" subtitle={activeProject.name} />
 
-      <div className="rounded-xl border border-(--color-border) bg-(--color-surface) p-5 mb-5">
+      <div className="rounded-2xl border border-(--color-border) bg-(--color-surface) p-5 mb-5">
         <p className="text-[13px] font-medium text-(--color-ink-muted) mb-3">Periodos guardados</p>
         <div className="flex flex-wrap gap-2">
           {sorted.map((s) => (
@@ -57,7 +57,7 @@ export function HistoryPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-(--color-border) bg-(--color-surface) p-5">
+      <div className="rounded-2xl border border-(--color-border) bg-(--color-surface) p-5">
         <div className="flex flex-wrap gap-4 mb-5">
           <PeriodSelect label="Periodo A" value={snapshotA?.id} options={sorted} onChange={setPeriodAId} />
           <PeriodSelect label="Periodo B" value={snapshotB?.id} options={sorted} onChange={setPeriodBId} />
@@ -135,7 +135,7 @@ function PeriodSelect({
 
 function EmptyPanel({ text, action }: { text: string; action?: boolean }) {
   return (
-    <div className="rounded-xl border border-dashed border-(--color-border-strong) bg-(--color-surface) px-6 py-14 text-center max-w-xl">
+    <div className="rounded-2xl border border-dashed border-(--color-border-strong) bg-(--color-surface) px-6 py-14 text-center max-w-xl">
       <p className="text-[13.5px] text-(--color-ink-muted)">{text}</p>
       {action && (
         <Link

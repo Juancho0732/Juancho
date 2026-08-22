@@ -44,7 +44,7 @@ export function HealthScorePage() {
     <div className="max-w-3xl">
       <PageHeader title="Marketing Health Score" subtitle={`${activeProject.name} · ${activeSnapshot.label}`} />
 
-      <div className="rounded-xl border border-(--color-border) bg-(--color-surface) p-6 mb-5 flex items-center gap-6 flex-wrap">
+      <div className="rounded-2xl border border-(--color-border) bg-(--color-surface) p-6 mb-5 flex items-center gap-6 flex-wrap">
         {overall !== undefined ? (
           <>
             <p className={`text-[48px] font-semibold tabular-nums leading-none ${scoreColor(overall)}`}>{overall}</p>
@@ -62,7 +62,7 @@ export function HealthScorePage() {
         )}
       </div>
 
-      <div className="rounded-xl border border-(--color-border) bg-(--color-surface) p-5 mb-5">
+      <div className="rounded-2xl border border-(--color-border) bg-(--color-surface) p-5 mb-5">
         <p className="text-[13px] font-medium text-(--color-ink-muted) mb-4">Dimensiones</p>
         <div className="flex flex-col gap-4">
           {dimensions.map((d) => (
@@ -82,7 +82,7 @@ export function HealthScorePage() {
         </div>
       </div>
 
-      <details className="rounded-xl border border-(--color-border) bg-(--color-surface) p-5">
+      <details className="rounded-2xl border border-(--color-border) bg-(--color-surface) p-5">
         <summary className="text-[13.5px] font-medium text-(--color-ink) cursor-pointer">¿Cómo se calcula este puntaje?</summary>
         <div className="text-[13px] text-(--color-ink-muted) leading-relaxed mt-3 space-y-2">
           <p>
@@ -109,7 +109,7 @@ export function HealthScorePage() {
 
 function EmptyPanel({ text, action }: { text: string; action?: boolean }) {
   return (
-    <div className="rounded-xl border border-dashed border-(--color-border-strong) bg-(--color-surface) px-6 py-14 text-center max-w-xl">
+    <div className="rounded-2xl border border-dashed border-(--color-border-strong) bg-(--color-surface) px-6 py-14 text-center max-w-xl">
       <p className="text-[13.5px] text-(--color-ink-muted)">{text}</p>
       {action && (
         <Link

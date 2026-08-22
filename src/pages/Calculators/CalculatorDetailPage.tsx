@@ -113,7 +113,7 @@ export function CalculatorDetailPage() {
       )}
 
       {visibleFields.length > 0 && (
-        <div className="rounded-xl border border-(--color-border) bg-(--color-surface) p-5 grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+        <div className="rounded-2xl border border-(--color-border) bg-(--color-surface) p-5 grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
           {visibleFields.map((field) => (
             <FieldInput
               key={field.key}
@@ -135,7 +135,7 @@ export function CalculatorDetailPage() {
         </p>
       )}
 
-      <div className="rounded-xl border border-(--color-border) bg-(--color-surface) p-5 mb-5">
+      <div className="rounded-2xl border border-(--color-border) bg-(--color-surface) p-5 mb-5">
         <div className="flex items-center justify-between gap-3 mb-1">
           <p className="text-[13px] font-medium text-(--color-ink-muted)">Resultado</p>
           {status && <StatusBadge status={status} />}
@@ -148,7 +148,7 @@ export function CalculatorDetailPage() {
 
         {result.breakdown && (
           <div className="mt-4 pt-4 border-t border-(--color-border) space-y-1">
-            <p className="text-[12px] font-medium text-(--color-ink-faint) uppercase tracking-wide mb-1.5">Paso a paso</p>
+            <p className="text-[12px] font-medium text-(--color-ink-faint) font-mono uppercase tracking-widest mb-1.5">Paso a paso</p>
             {Object.entries(result.breakdown)
               .filter(([, v]) => typeof v === 'number')
               .map(([key, value]) => (
@@ -184,7 +184,7 @@ export function CalculatorDetailPage() {
 
 function EmptyPanel({ text }: { text: string }) {
   return (
-    <div className="rounded-xl border border-dashed border-(--color-border-strong) bg-(--color-surface) px-6 py-10 text-center">
+    <div className="rounded-2xl border border-dashed border-(--color-border-strong) bg-(--color-surface) px-6 py-10 text-center">
       <p className="text-[13.5px] text-(--color-ink-muted)">{text}</p>
     </div>
   );
