@@ -60,6 +60,12 @@ const config: ExpoConfig = {
     typedRoutes: true,
   },
   owner: 'juancho0725',
+  updates: {
+    url: 'https://u.expo.dev/f49fad08-a17f-468a-b90a-89d24bd812b5',
+  },
+  runtimeVersion: {
+    policy: 'appVersion',
+  },
   extra: {
     // ID real del proyecto en EAS (@juancho0725/zone), creado con `eas init`.
     // Se escribe a mano porque `eas init` no sabe editar un app.config.ts
