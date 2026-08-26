@@ -28,7 +28,12 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+      # La app es un SPA con router: sin este fallback, recargar o abrir
+      # directo cualquier ruta que no sea la raíz devuelve 404 en Pages.
+      - run: cp dist/index.html dist/404.html
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

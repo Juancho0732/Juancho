@@ -7,7 +7,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 // GitHub Pages sirve el proyecto en /<repo>/, no en la raíz del dominio —
 // el base path tiene que coincidir o todos los assets (JS, CSS, íconos,
 // manifest) resuelven a 404 en producción.
-const BASE_PATH = '/Claude-pro/';
+const BASE_PATH = '/Juancho/';
 
 // https://vite.dev/config/
 export default defineConfig({
