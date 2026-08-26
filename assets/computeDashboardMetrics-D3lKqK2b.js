@@ -1,0 +1,1 @@
+import{r as e}from"./PageHeader-BGC9vIZV.js";function t(t,n){let r={...t,ltvMethod:t.ltvMethod??n},i=e(`cac`).compute(r),a=e(`clv`).compute(r),o={cac:i.value,clv:a.value};return{cac:i,clv:a,ltvCac:e(`ltvCac`).compute(r,o),payback:e(`payback`).compute(r,o),roas:e(`roas`).compute(r),roi:e(`roi`).compute(r)}}export{t};

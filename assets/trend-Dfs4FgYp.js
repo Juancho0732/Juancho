@@ -1,0 +1,1 @@
+function e(e,t){if(e===void 0||t===void 0||t===0)return;let n=(e-t)/Math.abs(t)*100;return{direction:n>.05?`up`:n<-.05?`down`:`flat`,changePercent:n}}export{e as t};
