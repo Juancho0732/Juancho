@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - claude/marketing-metrics-app-7ynccy
+      - claude/marketing-metrics-dark-theme-733bn0
   workflow_dispatch:
 
 permissions:
