@@ -58,6 +58,11 @@ const config: ExpoConfig = {
   ],
   experiments: {
     typedRoutes: true,
+    // Solo se define para el export estático de GitHub Pages (ver
+    // .github/workflows/deploy-web.yml), que sirve el sitio bajo /Juancho/
+    // en vez de la raíz del dominio. Sin EXPO_WEB_BASE_URL (build nativo o
+    // `expo start`), esto queda undefined y no afecta nada.
+    baseUrl: process.env.EXPO_WEB_BASE_URL,
   },
   owner: 'juancho0725',
   updates: {
