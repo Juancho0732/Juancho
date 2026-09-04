@@ -6,7 +6,13 @@ import { PlaceCard } from '@/components/domain';
 import { Button, Input, QueryState, Screen, Text } from '@/components/ui';
 import { theme } from '@/design-system/theme';
 import { useFavoriteIds, useToggleFavorite } from '@/features/favorites';
-import { FiltersSheet, useCategories, usePlacesInfinite, type PlaceFilters } from '@/features/places';
+import {
+  FiltersSheet,
+  occasionToTag,
+  useCategories,
+  usePlacesInfinite,
+  type PlaceFilters,
+} from '@/features/places';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import type { PlaceListItem } from '@/types/database';
 
@@ -34,6 +40,7 @@ export default function SearchScreen() {
     categoryId: filters.categoryId,
     maxPrice: filters.maxPrice,
     minRating: filters.minRating,
+    tag: filters.occasion ? occasionToTag(filters.occasion) : undefined,
   });
   const { data: favoriteIds } = useFavoriteIds();
   const toggleFavorite = useToggleFavorite();

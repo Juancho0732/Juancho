@@ -39,6 +39,13 @@ export type ListPlacesFilters = {
   maxPrice?: number;
   minRating?: number;
   search?: string;
+  /**
+   * Filtra por un tag de `places.tags` (ej. "romantic", "group_friendly").
+   * Genérico a propósito -- el mapeo de un concepto de UI como "ocasión" a un
+   * tag concreto vive en la capa de feature (src/features/places/constants.ts),
+   * no acá, para no acoplar esta capa de acceso a datos a esa taxonomía.
+   */
+  tag?: string;
   limit?: number;
   /** Prioridad 7 (paginación): página 0-based en unidades de `limit`, para Search. */
   offset?: number;
@@ -80,6 +87,9 @@ export async function listPlaces(filters: ListPlacesFilters = {}): Promise<Place
   }
   if (filters.minRating !== undefined) {
     query = query.gte('rating_avg', filters.minRating);
+  }
+  if (filters.tag) {
+    query = query.contains('tags', [filters.tag]);
   }
 
   const limit = filters.limit ?? 30;

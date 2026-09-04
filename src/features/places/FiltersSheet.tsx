@@ -5,10 +5,18 @@ import { Button, Chip, Text } from '@/components/ui';
 import { theme } from '@/design-system/theme';
 import type { ListPlacesFilters } from '@/services/supabase/queries';
 
-import { BOGOTA_LOCALITIES, BUDGET_PRESETS, MIN_RATING_PRESETS } from './constants';
+import {
+  BOGOTA_LOCALITIES,
+  BUDGET_PRESETS,
+  MIN_RATING_PRESETS,
+  OCCASION_FILTER_OPTIONS,
+  type OccasionFilterValue,
+} from './constants';
 import { useCategories } from './useCategories';
 
-export type PlaceFilters = Pick<ListPlacesFilters, 'locality' | 'categoryId' | 'maxPrice' | 'minRating'>;
+export type PlaceFilters = Pick<ListPlacesFilters, 'locality' | 'categoryId' | 'maxPrice' | 'minRating'> & {
+  occasion?: OccasionFilterValue;
+};
 
 type Props = {
   visible: boolean;
@@ -95,6 +103,25 @@ export function FiltersSheet({ visible, value, onApply, onClose }: Props) {
                     label={preset.label}
                     selected={draft.maxPrice === preset.value}
                     onPress={() => setDraft((prev) => ({ ...prev, maxPrice: preset.value }))}
+                  />
+                ))}
+              </View>
+            </View>
+
+            <View style={styles.section}>
+              <Text variant="subtitle">Tipo de plan</Text>
+              <View style={styles.chipRow}>
+                <Chip
+                  label="Cualquiera"
+                  selected={!draft.occasion}
+                  onPress={() => setDraft((prev) => ({ ...prev, occasion: undefined }))}
+                />
+                {OCCASION_FILTER_OPTIONS.map((option) => (
+                  <Chip
+                    key={option.value}
+                    label={option.label}
+                    selected={draft.occasion === option.value}
+                    onPress={() => setDraft((prev) => ({ ...prev, occasion: option.value }))}
                   />
                 ))}
               </View>

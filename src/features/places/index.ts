@@ -1,4 +1,11 @@
-export { BOGOTA_LOCALITIES, BUDGET_PRESETS, MIN_RATING_PRESETS } from './constants';
+export {
+  BOGOTA_LOCALITIES,
+  BUDGET_PRESETS,
+  MIN_RATING_PRESETS,
+  OCCASION_FILTER_OPTIONS,
+  occasionToTag,
+  type OccasionFilterValue,
+} from './constants';
 export { FiltersSheet, type PlaceFilters } from './FiltersSheet';
 export { useCategories } from './useCategories';
 export { useNearbyPlaces } from './useNearbyPlaces';

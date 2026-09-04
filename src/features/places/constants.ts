@@ -26,3 +26,25 @@ export const MIN_RATING_PRESETS = [
   { label: '4+', value: 4 },
   { label: '4.5+', value: 4.5 },
 ] as const;
+
+/**
+ * Filtro de "Tipo de plan" en Search (búsqueda manual). Reusa las mismas
+ * ocasiones que ya existen en reviews (OCCASION_OPTIONS) y el mismo mapeo a
+ * tags que ya usa el ranking de AI-search -- debe coincidir con OCCASION_TAGS
+ * en supabase/functions/ai-search/ranking.ts. Antes este filtro solo existía
+ * en el flujo de búsqueda por IA (texto libre); esto lo hace disponible
+ * también sin escribir nada.
+ */
+export const OCCASION_FILTER_OPTIONS = [
+  { label: 'Amigos', value: 'amigos', tag: 'group_friendly' },
+  { label: 'Pareja', value: 'pareja', tag: 'romantic' },
+  { label: 'Familia', value: 'familia', tag: 'family_friendly' },
+  { label: 'Solo/a', value: 'solo', tag: 'quiet' },
+  { label: 'Trabajo', value: 'trabajo', tag: 'quiet' },
+] as const;
+
+export type OccasionFilterValue = (typeof OCCASION_FILTER_OPTIONS)[number]['value'];
+
+export function occasionToTag(occasion: string): string | undefined {
+  return OCCASION_FILTER_OPTIONS.find((option) => option.value === occasion)?.tag;
+}

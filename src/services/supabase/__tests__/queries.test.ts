@@ -20,6 +20,7 @@ function createQueryBuilder(result: { data: unknown; error: unknown }) {
     lte: chain('lte'),
     gte: chain('gte'),
     or: chain('or'),
+    contains: chain('contains'),
     order: chain('order'),
     limit: chain('limit'),
     range: chain('range'),
@@ -107,6 +108,24 @@ describe('listPlaces', () => {
     expect(calls).toContainEqual({ method: 'range', args: [0, 4] });
   });
 
+  it('aplica tag (ej. ocasión traducida a tag) con .contains', async () => {
+    const { builder, calls } = createQueryBuilder({ data: [], error: null });
+    mockFrom.mockReturnValue(builder);
+
+    await listPlaces({ tag: 'romantic' });
+
+    expect(calls).toContainEqual({ method: 'contains', args: ['tags', ['romantic']] });
+  });
+
+  it('no agrega .contains si no se pasa tag', async () => {
+    const { builder, calls } = createQueryBuilder({ data: [], error: null });
+    mockFrom.mockReturnValue(builder);
+
+    await listPlaces();
+
+    expect(calls.find((call) => call.method === 'contains')).toBeUndefined();
+  });
+
   it('Prioridad 7: usa offset para pedir la página siguiente sin repetir resultados', async () => {
     const { builder, calls } = createQueryBuilder({ data: [], error: null });
     mockFrom.mockReturnValue(builder);
@@ -137,8 +156,12 @@ describe('listPlaces', () => {
 
     const orCall = calls.find((call) => call.method === 'or');
     expect(orCall?.args[0]).toBe(
-      'name.ilike.%café   rico  50%,description.ilike.%café   rico  50%',
+      'and(name.ilike.%café   rico  50%,status.eq.active),and(description.ilike.%café   rico  50%,status.eq.active)',
     );
+    // El status.eq.active va dentro del .or(), no como .eq() aparte -- ver el
+    // fix de búsqueda (PostgREST no combina .eq() previo con un .or() salvo
+    // que la condición esté explícita dentro de cada rama del or()).
+    expect(calls.find((call) => call.method === 'eq' && call.args[0] === 'status')).toBeUndefined();
   });
 
   it('no agrega el filtro .or() si el término queda vacío tras sanear', async () => {
