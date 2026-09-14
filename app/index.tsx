@@ -27,8 +27,11 @@ export default function SplashScreen() {
   return (
     <Screen>
       <View style={styles.center}>
-        <Text variant="title" style={styles.brand}>
-          Zone
+        <Text variant="display" color="primary" style={styles.brand}>
+          Parch Out
+        </Text>
+        <Text variant="serif" color="primary" style={styles.brandTagline}>
+          Encuentra tu parche
         </Text>
         <Text variant="body" color="textSecondary" style={styles.tagline}>
           Dime qué quieres hacer, cuánto tienes y dónde estás.
@@ -48,6 +51,9 @@ const styles = StyleSheet.create({
   },
   brand: {
     marginBottom: theme.spacing.xs,
+  },
+  brandTagline: {
+    marginBottom: theme.spacing.md,
   },
   tagline: {
     textAlign: 'center',

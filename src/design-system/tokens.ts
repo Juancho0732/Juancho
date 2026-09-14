@@ -1,28 +1,32 @@
 /**
  * Design tokens — única fuente de verdad para estilos visuales.
  * No hardcodear colores, espaciados ni tipografías fuera de este archivo.
- * Sistema neutro (sin identidad de marca todavía, ver docs/00-fase0-analisis.md §10).
+ * Identidad de marca "Parch Out" (brand board del 2026-09-14). Los hex de
+ * este archivo son una lectura visual del board hecha a mano — el board
+ * traía los hex mal etiquetados (no correspondían a los círculos), así que
+ * si en algún momento se consigue la paleta exacta del diseñador, reemplazar
+ * estos valores.
  */
 
 export const colors = {
-  background: '#FFFFFF',
-  surface: '#F7F7F8',
-  border: '#E5E5EA',
+  background: '#FFF9F0',
+  surface: '#EFF7FC',
+  border: '#E4D9D2',
 
-  textPrimary: '#111114',
-  textSecondary: '#6B6B72',
+  textPrimary: '#2A0E14',
+  textSecondary: '#7A6A66',
   textInverse: '#FFFFFF',
 
-  primary: '#2E2EE0',
-  primaryPressed: '#2424B8',
+  primary: '#6E1423',
+  primaryPressed: '#4E0E19',
   onPrimary: '#FFFFFF',
 
   success: '#1E9E5A',
-  warning: '#C77A00',
-  danger: '#D3392E',
+  warning: '#A8841F',
+  danger: '#B03A2E',
 
-  rating: '#F5A623',
-  favorite: '#E0294F',
+  rating: '#F5C518',
+  favorite: '#6E1423',
 } as const;
 
 export const spacing = {
@@ -43,9 +47,17 @@ export const radius = {
 
 export const typography = {
   family: {
-    regular: 'System',
-    medium: 'System',
-    bold: 'System',
+    // UI/cuerpo — sustituto libre (Google Fonts) de "Telegraf" del brand board.
+    regular: 'FamiljenGrotesk_400Regular',
+    medium: 'FamiljenGrotesk_500Medium',
+    bold: 'FamiljenGrotesk_700Bold',
+    // Wordmark "Parch Out" — sustituto libre de "Funky Bird". Uso limitado a
+    // momentos de marca (splash, onboarding), no para texto de UI general.
+    display: 'BagelFatOne_400Regular',
+    // Acentos elegantes (tagline, nombres de lugar destacados) — sustituto
+    // libre de "Bauer Bodoni Condensed". No usar para párrafos largos: un
+    // Didone se lee mal en tamaños chicos.
+    serifAccent: 'BodoniModa_400Regular',
   },
   size: {
     xs: 12,

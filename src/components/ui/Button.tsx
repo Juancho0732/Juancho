@@ -59,6 +59,6 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   label: {
-    fontWeight: theme.typography.weight.medium,
+    fontFamily: theme.typography.family.medium,
   },
 });

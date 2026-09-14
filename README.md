@@ -1,4 +1,4 @@
-# Zone — App de descubrimiento de planes (Bogotá)
+# Parch Out — App de descubrimiento de planes (Bogotá)
 
 App móvil que responde "¿qué puedo hacer?": el usuario describe lo que busca en lenguaje
 natural (presupuesto, compañía, ubicación, ocasión) y la app recomienda lugares reales que
@@ -132,7 +132,7 @@ un build real):
    consumiendo la cuota/facturación del proyecto de Google Cloud sin límite.
 
 **Actualizado (preparación para beta real):** `app.config.ts` ya define `android.package` /
-`ios.bundleIdentifier` como `com.zone.app` — **identificador definitivo, aprobado junto con el nombre
+`ios.bundleIdentifier` como `com.parchout.app` — **identificador definitivo, aprobado junto con el nombre
 definitivo** (`com.example.*` es el prefijo que el propio Expo usa para "todavía sin decidir").
 Sirve para poder generar un build de prueba (confirmado con `expo prebuild` — genera proyectos
 Android/iOS válidos) y para que `eas.json` (ya existe, perfiles `development`/`preview`/
@@ -161,7 +161,10 @@ evidencia de cada verificación):
   (schema, RLS, RPCs, constraints, categorías reales).
 - HECHO — Edge Function `ai-search` desplegada y respondiendo.
 - HECHO — Redirect URL de recuperación de contraseña (`zone://reset-password`) configurado en
-  Supabase Auth.
+  Supabase Auth. **PENDIENTE tras el rebrand a "Parch Out"**: el scheme cambió a `parchout://`
+  (`app.config.ts`), así que hay que agregar `parchout://reset-password` a la allowlist de
+  Supabase Auth (Authentication → URL Configuration → Redirect URLs) — si no, la recuperación de
+  contraseña queda rota hasta que se actualice ese dashboard.
 - HECHO — RLS, `CHECK` constraints, cascadas, RPCs, Auth (login/registro real) y `ai-search`
   verificados contra el proyecto real con datos de prueba desechables, creados y eliminados en la
   misma sesión.
@@ -170,7 +173,7 @@ evidencia de cada verificación):
   verificado), pero no usa IA real todavía.
 - REQUIERE DECISIÓN DEL EQUIPO — si la confirmación de correo debe ser obligatoria antes del primer
   login (hoy sí lo es, el valor por defecto de Supabase).
-- HECHO — identificador definitivo `com.zone.app` (nombre de la app: Zone)
+- HECHO — identificador definitivo `com.parchout.app` (nombre de la app: Parch Out)
   (`android.package`/`ios.bundleIdentifier`) por el identificador definitivo, y obtener/restringir
   una API key de Google Maps real para ese package name (`eas.json` con perfiles de build ya
   existe, no falta crearlo).
@@ -359,7 +362,7 @@ por correo, el registro no deja sesión iniciada de inmediato — la pantalla lo
 
 Flujo estándar de Supabase Auth con PKCE (`flowType: 'pkce'` en `services/supabase/client.ts`):
 el enlace de recuperación llega como `?code=...` (parámetro de query normal, igual en web y en el
-deep link nativo `zone://reset-password?code=...`) en vez de un fragmento `#access_token=...` —
+deep link nativo `parchout://reset-password?code=...`) en vez de un fragmento `#access_token=...` —
 más simple de leer desde `expo-router` (`useLocalSearchParams`) y no expone tokens en la URL ni en
 el historial del navegador/correo.
 

@@ -19,7 +19,7 @@ jest.mock('@/services/supabase/client', () => ({
 }));
 
 jest.mock('expo-linking', () => ({
-  createURL: jest.fn((path: string) => `zone://${path}`),
+  createURL: jest.fn((path: string) => `parchout://${path}`),
 }));
 
 // eslint-disable-next-line import/first -- los mocks de arriba deben declararse antes de importar '../api'
@@ -124,7 +124,7 @@ describe('requestPasswordReset', () => {
     await requestPasswordReset({ email: 'ana@example.com' });
 
     expect(mockResetPasswordForEmail).toHaveBeenCalledWith('ana@example.com', {
-      redirectTo: 'zone://reset-password',
+      redirectTo: 'parchout://reset-password',
     });
   });
 
