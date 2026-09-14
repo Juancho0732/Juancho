@@ -1,32 +1,35 @@
 /**
  * Design tokens — única fuente de verdad para estilos visuales.
  * No hardcodear colores, espaciados ni tipografías fuera de este archivo.
- * Identidad de marca "Parch Out" (brand board del 2026-09-14). Los hex de
- * este archivo son una lectura visual del board hecha a mano — el board
- * traía los hex mal etiquetados (no correspondían a los círculos), así que
- * si en algún momento se consigue la paleta exacta del diseñador, reemplazar
- * estos valores.
+ * Identidad de marca "Parch Out". Paleta oficial confirmada por el equipo
+ * (los hex impresos en el brand board estaban mal etiquetados: decodificaban
+ * a verdes y beiges que no correspondían a los círculos mostrados):
+ *
+ *   rojo oscuro #73040D · rojo ladrillo #8F2622 · dorado #D9B006
+ *   amarillo #F7CB34 · azul #83B5E6
+ *
+ * background/border son neutros de apoyo, no salen del board.
  */
 
 export const colors = {
   background: '#FFF9F0',
-  surface: '#EFF7FC',
+  surface: '#EDF4FC',
   border: '#E4D9D2',
 
-  textPrimary: '#2A0E14',
+  textPrimary: '#2B0508',
   textSecondary: '#7A6A66',
   textInverse: '#FFFFFF',
 
-  primary: '#6E1423',
-  primaryPressed: '#4E0E19',
+  primary: '#73040D',
+  primaryPressed: '#520309',
   onPrimary: '#FFFFFF',
 
   success: '#1E9E5A',
-  warning: '#A8841F',
-  danger: '#B03A2E',
+  warning: '#D9B006',
+  danger: '#8F2622',
 
-  rating: '#F5C518',
-  favorite: '#6E1423',
+  rating: '#F7CB34',
+  favorite: '#73040D',
 } as const;
 
 export const spacing = {
