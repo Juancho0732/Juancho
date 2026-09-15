@@ -48,20 +48,27 @@ describe('Prioridad 14 (accesibilidad): contraste de los pares de color que la a
     expect(contrastRatio(colors.primary, colors.surface)).toBeGreaterThan(4.5);
   });
 
-  it('onPrimaryMuted sobre primary (tab inactivo sobre la barra vino): mínimo 3:1 de componente UI', () => {
+  it('onPrimaryMuted sobre background (tab inactivo sobre la barra vino): mínimo 3:1 de componente UI', () => {
     // Un tab inactivo es deliberadamente de menor jerarquía que el activo, así
     // que se le exige el 3:1 de componentes gráficos, no el 4.5:1 de texto.
-    expect(contrastRatio(colors.onPrimaryMuted, colors.primary)).toBeGreaterThanOrEqual(3);
+    expect(contrastRatio(colors.onPrimaryMuted, colors.background)).toBeGreaterThanOrEqual(3);
   });
 
-  it('RIESGO DOCUMENTADO: rating sobre background (glifo ★ de StarRating) no llega ni al mínimo de 3:1 para componentes gráficos/UI', () => {
-    // No se cambia el color acá a propósito -- es una decisión de marca/diseño
-    // ("no cambies colores de forma arbitraria"), no algo para decidir en una
-    // auditoría. Este test deja el hallazgo registrado y visible en la suite
-    // en vez de dejarlo solo en un documento aparte: si alguien "arregla" el
-    // color más adelante, este test empieza a fallar y hay que actualizarlo
-    // a una aserción de que SÍ pasa -- lo cual es la señal correcta.
+  it('border sobre background (estrella vacía de StarRating): mínimo 3:1 de componente UI', () => {
+    expect(contrastRatio(colors.border, colors.background)).toBeGreaterThanOrEqual(3);
+  });
+
+  it('textInverse sobre accent (inicial dentro de la miniatura azul): AA de sobra', () => {
+    expect(contrastRatio(colors.textInverse, colors.accent)).toBeGreaterThan(4.5);
+  });
+
+  it('RIESGO RESUELTO: rating sobre background (glifo ★ de StarRating) ya supera el 3:1 de componentes gráficos/UI', () => {
+    // Este test registraba lo contrario: el amarillo sobre fondo claro no
+    // llegaba ni a 3:1, y se dejó documentado con la instrucción de
+    // convertirlo en una aserción positiva si alguna vez el color pasaba.
+    // Eso ocurrió, pero no por tocar el amarillo: al invertir el tema a fondo
+    // vino, el mismo #F7CB34 pasó a leerse sobre oscuro y hoy da ~7.7:1.
     const ratio = contrastRatio(colors.rating, colors.background);
-    expect(ratio).toBeLessThan(3);
+    expect(ratio).toBeGreaterThanOrEqual(3);
   });
 });

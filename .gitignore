@@ -44,3 +44,10 @@ yarn-error.*
 # python (supabase/seed/ tooling)
 __pycache__/
 *.pyc
+# vercel
+.vercel
+.env
+.env*.local
+
+# temporales del CLI de supabase
+supabase/.temp/

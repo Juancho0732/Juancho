@@ -8,10 +8,10 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         // Barra en vino con el activo en amarillo: el mismo par del wordmark.
-        tabBarActiveTintColor: theme.colors.onPrimary,
+        tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.onPrimaryMuted,
         tabBarStyle: {
-          backgroundColor: theme.colors.primary,
+          backgroundColor: theme.colors.background,
           borderTopWidth: theme.borderWidth.thick,
           borderTopColor: theme.colors.frame,
         },

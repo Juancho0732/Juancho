@@ -14,6 +14,7 @@ import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { Toast } from '@/components/ui';
+import { theme } from '@/design-system/theme';
 import { useAuthStore, useInitAuth, useProtectedRoute } from '@/features/auth';
 import { queryClient } from '@/services/query-client';
 
@@ -25,7 +26,20 @@ function NavigationGate() {
   useProtectedRoute(status);
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        // Sin esto los headers nativos quedarían blancos con texto oscuro,
+        // partiendo en dos la pantalla ahora que el resto es vino.
+        headerStyle: { backgroundColor: theme.colors.background },
+        headerTintColor: theme.colors.primary,
+        headerTitleStyle: {
+          color: theme.colors.textPrimary,
+          fontFamily: theme.typography.family.bold,
+        },
+        contentStyle: { backgroundColor: theme.colors.canvas },
+      }}
+    >
       <Stack.Screen name="index" />
       <Stack.Screen name="onboarding" />
       <Stack.Screen name="(auth)" />
@@ -59,7 +73,8 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
-        <StatusBar style="dark" />
+        {/* Iconos claros: la barra de estado queda sobre el vino, no sobre crema. */}
+        <StatusBar style="light" />
         <NavigationGate />
         <Toast />
       </QueryClientProvider>

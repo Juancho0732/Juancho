@@ -11,35 +11,45 @@
  * background/border son neutros de apoyo, no salen del board.
  */
 
+/**
+ * Tema oscuro construido sobre el vino de la marca. Invertir el fondo obliga a
+ * invertir la jerarquía entera: el texto pasa a crema y las acciones pasan al
+ * amarillo del board, porque un botón vino sobre fondo vino no se ve. Los
+ * semánticos (danger/success) van en versión clara por la misma razón: el
+ * ladrillo #8F2622 sobre vino es prácticamente invisible.
+ */
 export const colors = {
-  /** Lienzo de la app: el azul de los paneles del board. */
-  canvas: '#83B5E6',
-  /** Superficie de contenido (tarjetas, hojas, inputs) sobre el lienzo. */
-  background: '#FFF9F0',
-  /** Superficie de acento: el amarillo del board (chips, botón secundario). */
-  surface: '#F7CB34',
-  /** Marco grueso en vino, el recurso gráfico que define el board. */
-  frame: '#73040D',
-  /** Borde neutro y sutil: divisores y estrellas vacías, no el marco de marca. */
-  border: '#D8C9BE',
+  /** Lienzo de la app: el vino oficial bajado, para que las tarjetas resalten. */
+  canvas: '#5E0309',
+  /** Superficie de contenido (tarjetas, hojas, diálogos): el vino oficial. */
+  background: '#73040D',
+  /** Superficie elevada: chips sin seleccionar y botón secundario. */
+  surface: '#8A1017',
+  /** Marco grueso en dorado: sobre vino, un marco vino no separa nada. */
+  frame: '#D9B006',
+  /** Borde sutil: divisores y estrellas vacías, no el marco de marca. */
+  border: '#B8837A',
+  /** El azul del board, como acento puntual (miniaturas de lugar). */
+  accent: '#83B5E6',
 
-  textPrimary: '#2B0508',
-  textSecondary: '#4A2B2B',
-  textInverse: '#FFFFFF',
+  textPrimary: '#FFF3E2',
+  textSecondary: '#E8C4B0',
+  /** Texto oscuro, para cuando el fondo es claro (amarillo, crema del Toast). */
+  textInverse: '#2B0508',
 
-  primary: '#73040D',
-  primaryPressed: '#520309',
-  /** Amarillo sobre vino: el par que el board usa en el wordmark. */
-  onPrimary: '#F7CB34',
+  primary: '#F7CB34',
+  primaryPressed: '#D9B006',
+  /** Vino sobre amarillo: el par del wordmark, ahora al revés. */
+  onPrimary: '#73040D',
   /** Estado inactivo sobre superficies vino (tab bar). */
-  onPrimaryMuted: '#D3A6A0',
+  onPrimaryMuted: '#B9857C',
 
-  success: '#1E9E5A',
-  warning: '#D9B006',
-  danger: '#8F2622',
+  success: '#7ED9A0',
+  warning: '#F0C419',
+  danger: '#F2A093',
 
   rating: '#F7CB34',
-  favorite: '#73040D',
+  favorite: '#F7CB34',
 } as const;
 
 export const borderWidth = {
@@ -97,9 +107,10 @@ export const shadow = {
   // Sombra dura y desplazada, no difuminada: el board apila formas planas con
   // un offset sólido detrás (el wordmark y la "P" del badge), no usa blur.
   card: {
-    shadowColor: '#73040D',
+    // Casi negro, no vino: sobre un lienzo vino una sombra vino no se ve.
+    shadowColor: '#2B0508',
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.22,
+    shadowOpacity: 0.45,
     shadowRadius: 0,
     elevation: 3,
   },

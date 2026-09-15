@@ -36,7 +36,7 @@ export function PlaceCard({
     <Pressable onPress={onPress} accessibilityRole="link" testID={`place-card-${place.id}`}>
       <Card style={styles.card}>
         <View style={styles.thumbnail}>
-          <Text variant="display" color="onPrimary" style={styles.thumbnailInitial}>
+          <Text variant="display" color="textInverse" style={styles.thumbnailInitial}>
             {place.name.charAt(0).toUpperCase()}
           </Text>
         </View>
@@ -98,7 +98,9 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: theme.radius.md,
-    backgroundColor: theme.colors.primary,
+    // El azul del board: sobre tarjetas vino es el acento que más resalta, y
+    // evita que la miniatura compita con el amarillo de las acciones.
+    backgroundColor: theme.colors.accent,
     borderWidth: theme.borderWidth.thick,
     borderColor: theme.colors.frame,
     alignItems: 'center',
