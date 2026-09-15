@@ -7,8 +7,17 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: theme.colors.textSecondary,
+        // Barra en vino con el activo en amarillo: el mismo par del wordmark.
+        tabBarActiveTintColor: theme.colors.onPrimary,
+        tabBarInactiveTintColor: theme.colors.onPrimaryMuted,
+        tabBarStyle: {
+          backgroundColor: theme.colors.primary,
+          borderTopWidth: theme.borderWidth.thick,
+          borderTopColor: theme.colors.frame,
+        },
+        tabBarLabelStyle: {
+          fontFamily: theme.typography.family.medium,
+        },
       }}
     >
       <Tabs.Screen name="home" options={{ title: 'Inicio' }} />

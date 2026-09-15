@@ -39,13 +39,16 @@ const styles = StyleSheet.create({
     marginLeft: theme.spacing.xs,
   },
   input: {
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderWidth: theme.borderWidth.thick,
+    borderColor: theme.colors.frame,
     borderRadius: theme.radius.md,
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm + 2,
+    fontFamily: theme.typography.family.regular,
     fontSize: theme.typography.size.md,
     color: theme.colors.textPrimary,
-    backgroundColor: theme.colors.surface,
+    // Crema, no el amarillo de acento: un campo de texto largo en amarillo
+    // saturado cansa la vista y compite con los chips.
+    backgroundColor: theme.colors.background,
   },
 });

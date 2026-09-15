@@ -36,6 +36,24 @@ describe('Prioridad 14 (accesibilidad): contraste de los pares de color que la a
     expect(contrastRatio(colors.favorite, colors.background)).toBeGreaterThanOrEqual(4.5);
   });
 
+  it('textPrimary sobre canvas (títulos de sección sobre el azul): AA de sobra', () => {
+    expect(contrastRatio(colors.textPrimary, colors.canvas)).toBeGreaterThan(4.5);
+  });
+
+  it('textSecondary sobre canvas: AA — hay texto secundario que cae directo en el lienzo, no solo dentro de tarjetas', () => {
+    expect(contrastRatio(colors.textSecondary, colors.canvas)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('primary sobre surface (texto vino sobre los chips amarillos): AA de sobra', () => {
+    expect(contrastRatio(colors.primary, colors.surface)).toBeGreaterThan(4.5);
+  });
+
+  it('onPrimaryMuted sobre primary (tab inactivo sobre la barra vino): mínimo 3:1 de componente UI', () => {
+    // Un tab inactivo es deliberadamente de menor jerarquía que el activo, así
+    // que se le exige el 3:1 de componentes gráficos, no el 4.5:1 de texto.
+    expect(contrastRatio(colors.onPrimaryMuted, colors.primary)).toBeGreaterThanOrEqual(3);
+  });
+
   it('RIESGO DOCUMENTADO: rating sobre background (glifo ★ de StarRating) no llega ni al mínimo de 3:1 para componentes gráficos/UI', () => {
     // No se cambia el color acá a propósito -- es una decisión de marca/diseño
     // ("no cambies colores de forma arbitraria"), no algo para decidir en una

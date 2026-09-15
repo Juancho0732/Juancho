@@ -12,17 +12,27 @@
  */
 
 export const colors = {
+  /** Lienzo de la app: el azul de los paneles del board. */
+  canvas: '#83B5E6',
+  /** Superficie de contenido (tarjetas, hojas, inputs) sobre el lienzo. */
   background: '#FFF9F0',
-  surface: '#EDF4FC',
-  border: '#E4D9D2',
+  /** Superficie de acento: el amarillo del board (chips, botón secundario). */
+  surface: '#F7CB34',
+  /** Marco grueso en vino, el recurso gráfico que define el board. */
+  frame: '#73040D',
+  /** Borde neutro y sutil: divisores y estrellas vacías, no el marco de marca. */
+  border: '#D8C9BE',
 
   textPrimary: '#2B0508',
-  textSecondary: '#7A6A66',
+  textSecondary: '#4A2B2B',
   textInverse: '#FFFFFF',
 
   primary: '#73040D',
   primaryPressed: '#520309',
-  onPrimary: '#FFFFFF',
+  /** Amarillo sobre vino: el par que el board usa en el wordmark. */
+  onPrimary: '#F7CB34',
+  /** Estado inactivo sobre superficies vino (tab bar). */
+  onPrimaryMuted: '#D3A6A0',
 
   success: '#1E9E5A',
   warning: '#D9B006',
@@ -30,6 +40,12 @@ export const colors = {
 
   rating: '#F7CB34',
   favorite: '#73040D',
+} as const;
+
+export const borderWidth = {
+  hairline: 1,
+  thick: 2,
+  chunky: 3,
 } as const;
 
 export const spacing = {
@@ -78,11 +94,13 @@ export const typography = {
 } as const;
 
 export const shadow = {
+  // Sombra dura y desplazada, no difuminada: el board apila formas planas con
+  // un offset sólido detrás (el wordmark y la "P" del badge), no usa blur.
   card: {
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowColor: '#73040D',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.22,
+    shadowRadius: 0,
+    elevation: 3,
   },
 } as const;

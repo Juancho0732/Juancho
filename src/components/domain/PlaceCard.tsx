@@ -36,7 +36,7 @@ export function PlaceCard({
     <Pressable onPress={onPress} accessibilityRole="link" testID={`place-card-${place.id}`}>
       <Card style={styles.card}>
         <View style={styles.thumbnail}>
-          <Text variant="title" color="textInverse">
+          <Text variant="display" color="onPrimary" style={styles.thumbnailInitial}>
             {place.name.charAt(0).toUpperCase()}
           </Text>
         </View>
@@ -99,8 +99,15 @@ const styles = StyleSheet.create({
     height: 56,
     borderRadius: theme.radius.md,
     backgroundColor: theme.colors.primary,
+    borderWidth: theme.borderWidth.thick,
+    borderColor: theme.colors.frame,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  thumbnailInitial: {
+    // La display es una fuente de titular: a 56px de caja hay que bajarla
+    // para que la inicial no se salga del thumbnail.
+    fontSize: theme.typography.size.xl,
   },
   info: {
     flex: 1,

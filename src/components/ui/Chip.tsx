@@ -22,7 +22,7 @@ export function Chip({ label, selected = false, onPress }: Props) {
         pressed && styles.pressed,
       ]}
     >
-      <Text variant="caption" color={selected ? 'onPrimary' : 'textPrimary'}>
+      <Text variant="caption" color={selected ? 'onPrimary' : 'primary'}>
         {label}
       </Text>
     </Pressable>
@@ -34,13 +34,13 @@ const styles = StyleSheet.create({
     paddingVertical: theme.spacing.xs,
     paddingHorizontal: theme.spacing.md,
     borderRadius: theme.radius.pill,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderWidth: theme.borderWidth.thick,
+    borderColor: theme.colors.frame,
     backgroundColor: theme.colors.surface,
   },
   chipSelected: {
     backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
+    borderColor: theme.colors.frame,
   },
   pressed: {
     opacity: 0.75,

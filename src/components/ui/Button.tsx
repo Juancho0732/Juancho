@@ -46,11 +46,13 @@ const styles = StyleSheet.create({
   },
   primary: {
     backgroundColor: theme.colors.primary,
+    borderWidth: theme.borderWidth.thick,
+    borderColor: theme.colors.frame,
   },
   secondary: {
     backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderWidth: theme.borderWidth.thick,
+    borderColor: theme.colors.frame,
   },
   pressed: {
     opacity: 0.85,

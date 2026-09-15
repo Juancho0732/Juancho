@@ -18,8 +18,8 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
     borderRadius: theme.radius.lg,
     padding: theme.spacing.md,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderWidth: theme.borderWidth.thick,
+    borderColor: theme.colors.frame,
     ...theme.shadow.card,
   },
 });
