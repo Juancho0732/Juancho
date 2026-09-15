@@ -1,0 +1,18 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npx expo export -p web",
+  "outputDirectory": "dist",
+  "framework": null,
+  "build": {
+    "env": {
+      "EXPO_PUBLIC_SUPABASE_URL": "https://nqkrhcyqjrbehztnpfts.supabase.co",
+      "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xa3JoY3lxanJiZWh6dG5wZnRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY1MjM5NTYsImV4cCI6MjEwMjA5OTk1Nn0.N4NQbJYYWcJeURWk5wO0RuKmvNG3Yxb0QYNqsAbeTV0"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
